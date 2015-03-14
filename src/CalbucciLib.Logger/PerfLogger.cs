@@ -24,7 +24,7 @@ namespace CalbucciLib
 
 		public PerfLogger(TimeSpan alertThreshold, string message = null, bool autoStart = true)
 		{
-			MaxThreshold = MaxThreshold;
+			MaxThreshold = alertThreshold;
 			Message = message;
 			if (autoStart)
 			{
@@ -59,11 +59,12 @@ namespace CalbucciLib
 				_Stopwatch.Stop();
 				if (_Stopwatch.Elapsed > MaxThreshold)
 				{
+				    string message = Message ?? "PerfLog > " + MaxThreshold.TotalSeconds.ToString("F") + " secs";
 					DefaultLogger.PerfIssue(logEvent =>
 					{
 						logEvent.Add("Perf", "MaxThreshold", MaxThreshold.TotalSeconds.ToString("F"));
 						logEvent.Add("Perf", "Elapsed", _Stopwatch.Elapsed.TotalSeconds.ToString("F"));
-					}, Message);
+					}, message);
 				}
 				_Stopwatch = null;
 			}

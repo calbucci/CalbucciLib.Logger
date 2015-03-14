@@ -15,30 +15,79 @@ namespace CalbucciLib
 		public string Type { get; set; }
 		public string StackSignature { get; set; }
 
-		public string UID { get; set; }
+		public string UniqueId { get; set; }
 		public DateTime EventDate { get; set; }
 		public DateTime EventDateUtc { get; set; }
+        
+		public Dictionary<string, Dictionary<string, object>> Information { get; set; }
 
-		Dictionary<string, Dictionary<string, object>> Information { get; set; }
+        // ============================================================
+        //
+        // CONSTRUCTORS
+        //
+        // ============================================================
 
 		public LogEvent(string type)
 		{
 			Information = new Dictionary<string, Dictionary<string, object>>();
 
 			Type = type;
-			UID = Guid.NewGuid().ToString("n");
+			UniqueId = Guid.NewGuid().ToString("n");
 			EventDate = DateTime.Now;
-			EventDate = DateTime.UtcNow;
+			EventDateUtc = DateTime.UtcNow;
 		}
+
+        // ============================================================
+        //
+        // SET / GET Information
+        //
+        // ============================================================
 
 		public void Add(string categoryName, string name, object value)
 		{
+		    if (string.IsNullOrWhiteSpace(categoryName) || string.IsNullOrWhiteSpace(name))
+		        return;
+
 			var category = GetOrCreateCategory(categoryName);
 			category[name] = value;
 		}
 
+
+	    public object Get(string categoryName, string name)
+	    {
+	        if (string.IsNullOrWhiteSpace(categoryName) || string.IsNullOrWhiteSpace(name))
+	            return null;
+
+	        var category = GetCategory(categoryName);
+	        if (category == null)
+	            return null;
+
+	        object ret = null;
+	        category.TryGetValue(name, out ret);
+	        return ret;
+	    }
+
+	    public void AddUserData(string name, object value)
+	    {
+	        Add("User", name, value);
+	    }
+
+	    public object GetUserData(string name)
+	    {
+	        return Get("User", name);
+	    }
+
+        // ============================================================
+        //
+        // CATEGORY
+        //
+        // ============================================================
+
 		public Dictionary<string, object> GetOrCreateCategory(string categoryName)
 		{
+		    if (string.IsNullOrWhiteSpace(categoryName))
+		        return null;
+
 			Dictionary<string, object> category;
 			if (!Information.TryGetValue(categoryName, out category))
 			{
@@ -49,24 +98,42 @@ namespace CalbucciLib
 			return category;
 		}
 
+        public Dictionary<string, object> GetCategory(string categoryName)
+        {
+            Dictionary<string, object> category = null;
+            if (!string.IsNullOrWhiteSpace(categoryName))
+            {
+                Information.TryGetValue(categoryName, out category);
+            }
+            return category;
+        }
+
+        // ============================================================
+        //
+        // CONVERSION
+        //
+        // ============================================================
+
 		public string ToJson(bool indent = false)
 		{
 			return JsonConvert.SerializeObject(this, indent ? Formatting.Indented : Formatting.None);
 		}
 
-		public string Htmlize()
+		public string Htmlify()
 		{
 			StringBuilder sb = new StringBuilder(4192);
 
-			sb.Append("<div>");
+			sb.Append(@"<div style=""font-family: arial;max-width: 40em;"">");
 
-			sb.AppendFormat(@"<p style=""font-size:160%"">{0}: {1}</p>", Type, HttpUtility.HtmlEncode(Message));
+			sb.AppendFormat(@"<p style=""font-size:160%;margin-bottom:0;"">{0}: {1}</p>", Type, HttpUtility.HtmlEncode(Message));
+		    sb.Append(@"<div style=""color:#888;font-size:80%;"">");
 			sb.AppendFormat(@"<div>Local Time: {0} | UTC: {1}</div>", HttpUtility.HtmlEncode(EventDate.ToString()), HttpUtility.HtmlEncode(EventDateUtc.ToString()));
-			sb.AppendFormat(@"<div>UID: {0} | StackSignature: {1}</div>", UID, StackSignature);
+            sb.AppendFormat(@"<div>UID: {0} | StackSignature: {1}</div>", UniqueId, StackSignature);
+		    sb.Append("</div>");
 
 			foreach (var de in Information)
 			{
-				sb.AppendFormat(@"<br><h3>{0}</h3>", HttpUtility.HtmlEncode(de.Key));
+				sb.AppendFormat(@"<h3 style=""margin-bottom: 0px;background:#ddd;padding:5px;"">{0}</h3>", HttpUtility.HtmlEncode(de.Key));
 				Htmlize(sb, de.Value);
 			}
 
@@ -82,21 +149,15 @@ namespace CalbucciLib
 
 			foreach (var de in info)
 			{
+                sb.AppendFormat(@"<div><i style=""display:inline-block;min-width:5em"">{0}</i> ", HttpUtility.HtmlEncode(de.Key));
 				if (de.Value == null)
 				{
-					sb.AppendFormat(@"<div><i>{0}</i>: (null)</div>", HttpUtility.HtmlEncode(de.Key));
-				}
-				else if (de.Value is Dictionary<string, object>)
-				{
-					sb.AppendFormat(@"<div><i>{0}</i></div>", HttpUtility.HtmlEncode(de.Key));
-					sb.Append(@"<div style=""padding-left:3em;"">");
-					Htmlize(sb, de.Value as Dictionary<string, object>);
-					sb.Append("</div>");
+					sb.Append(@": (null)");
 				}
 				else if (de.Value is IDictionary)
 				{
-					sb.AppendFormat(@"<div><i>{0}</i></div>", HttpUtility.HtmlEncode(de.Key));
-					sb.Append(@"<div style=""padding-left:3em;"">");
+                    sb.Append(@"(dictionary):</div>");
+					sb.Append(@"<div style=""padding-left:2em;"">");
 					var dic = ((IDictionary) de.Value);
 					foreach (var k in dic.Keys)
 					{
@@ -104,25 +165,27 @@ namespace CalbucciLib
 						sb.AppendFormat(@"<div><i>{0}</i>: {1}</div>", HttpUtility.HtmlEncode(k),
 							value != null ? HttpUtility.HtmlEncode(value) : "(null)");
 					}
-					sb.Append("</div>");
 					
 				}
-				else if (de.Value is ICollection)
+				else if (de.Value is IList)
 				{
-					sb.AppendFormat(@"<div><i>{0}</i></div>", HttpUtility.HtmlEncode(de.Key));
-					sb.Append(@"<div style=""padding-left:3em;"">");
-					var collection = ((ICollection) de.Value).Cast<object>().Select((value, index) => new {value, index});
-					foreach(var item in collection)
+                    sb.Append(@"(list):</div>");
+					sb.Append(@"<div style=""padding-left:2em;"">");
+					//var collection = ((ICollection) de.Value).Cast<object>().Select((value, index) => new {value, index});
+				    var list = de.Value as IList;
+					for(int i = 0; i < list.Count; i++)
 					{
-						sb.AppendFormat(@"<div><i>{0}</i>: {1}</div>", item.index,
-							item.value != null ? HttpUtility.HtmlEncode(item.value) : "(null)");
+					    var val = list[i];
+						sb.AppendFormat(@"<div><i>{0}</i>: {1}</div>", i, 
+							val != null ? HttpUtility.HtmlEncode(val) : "(null)");
 					}
-					sb.Append("</div>");
 				}
 				else
 				{
-					sb.AppendFormat(@"<div><i>{0}</i>: {1}</div>", HttpUtility.HtmlEncode(de.Key), de.Value != null ? HttpUtility.HtmlEncode(de.Value) : "(null)");
+				    sb.Append(": ");
+                    sb.Append(HttpUtility.HtmlEncode(de.Value));
 				}
+			    sb.Append("</div>");
 			}
 		}
 
