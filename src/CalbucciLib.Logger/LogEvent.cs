@@ -123,7 +123,7 @@ namespace CalbucciLib
 		{
 			StringBuilder sb = new StringBuilder(4192);
 
-			sb.Append(@"<div style=""font-family: arial;max-width: 40em;"">");
+			sb.Append(@"<div style=""font-family: arial;max-width: 72em;"">");
 
 			sb.AppendFormat(@"<p style=""font-size:160%;margin-bottom:0;"">{0}: {1}</p>", Type, HttpUtility.HtmlEncode(Message));
 		    sb.Append(@"<div style=""color:#888;font-size:80%;"">");
@@ -171,7 +171,6 @@ namespace CalbucciLib
 				{
                     sb.Append(@"(list):</div>");
 					sb.Append(@"<div style=""padding-left:2em;"">");
-					//var collection = ((ICollection) de.Value).Cast<object>().Select((value, index) => new {value, index});
 				    var list = de.Value as IList;
 					for(int i = 0; i < list.Count; i++)
 					{

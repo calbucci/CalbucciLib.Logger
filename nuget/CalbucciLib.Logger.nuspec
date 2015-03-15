@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>CalbucciLib.Logger</id>
+        <version>0.1.1.1</version>
+        <title>Logger: Simple and extensible Error Logging</title>
+        <authors>Marcelo Calbucci</authors>
+        <projectUrl>http://github.com/calbucci/CalbucciLib.Logger</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>An easy to use way to track exceptions, errors and other code conditions for logging purpose. Built-in support for email logging. Can be extended to work with file system, database, NoSQL, Twilio SMS, etc.</description>
+        <dependencies>
+            <dependency id="Newtonsoft.Json" version="6.0.8" />
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="..\src\CalbucciLib.Logger\bin\Release\CalbucciLib.Logger.dll" target="lib\net45\CalbucciLib.Logger.dll" />
+    </files>
+</package>

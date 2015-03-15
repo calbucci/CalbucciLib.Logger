@@ -76,6 +76,7 @@ namespace CalbucciLib
             set
             {
                 _DefaultEmailAddress = value == null ? null : new MailAddress(value);
+                Debug.WriteLine("_DefaultEmailAddress = " + _DefaultEmailAddress);
                 if (_DefaultEmailAddress != null && this.SmtpClient == null)
                 {
                     SmtpClient = new SmtpClient();
@@ -148,72 +149,72 @@ namespace CalbucciLib
         //
         // ============================================================
 
-        public LogEvent Error(string format, params string[] args)
+        public LogEvent Error(string format, params object[] args)
         {
             return Error(null, format, args);
         }
 
-        public LogEvent Error(Action<LogEvent> appendData, string format, params string[] args)
+        public LogEvent Error(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Log(appendData, "Error", null, format, args);
         }
 
-        public LogEvent Info(string format, params string[] args)
+        public LogEvent Info(string format, params object[] args)
         {
             return Info(null, format, args);
         }
 
-        public LogEvent Info(Action<LogEvent> appendData, string format, params string[] args)
+        public LogEvent Info(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Log(appendData, "Info", null, format, args);
         }
 
-        public LogEvent Warning(string format, params string[] args)
+        public LogEvent Warning(string format, params object[] args)
         {
             return Warning(null, format, args);
         }
 
-        public LogEvent Warning(Action<LogEvent> appendData, string format, params string[] args)
+        public LogEvent Warning(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Log(appendData, "Warning", null, format, args);
         }
 
-        public LogEvent Fatal(string format, params string[] args)
+        public LogEvent Fatal(string format, params object[] args)
         {
             return Fatal(null, format, args);
         }
 
-        public LogEvent Fatal(Action<LogEvent> appendData, string format, params string[] args)
+        public LogEvent Fatal(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Log(appendData, "Fatal", null, format, args);
         }
 
-        public LogEvent Exception(Exception ex, string format, params string[] args)
+        public LogEvent Exception(Exception ex, string format = null, params object[] args)
         {
             return Exception(null, ex, format, args);
         }
 
-        public LogEvent Exception(Action<LogEvent> appendData, Exception ex, string format, params string[] args)
+        public LogEvent Exception(Action<LogEvent> appendData, Exception ex, string format = null, params object[] args)
         {
             return Log(appendData, "Exception", ex, format, args);
         }
 
-        public LogEvent PerfIssue(string format, params string[] args)
+        public LogEvent PerfIssue(string format, params object[] args)
         {
             return PerfIssue(null, format, args);
         }
 
-        public LogEvent PerfIssue(Action<LogEvent> appendData, string format, params string[] args)
+        public LogEvent PerfIssue(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Log(appendData, "PerfIssue", null, format, args);
         }
 
-        public LogEvent InvalidCodePath(string format, params string[] args)
+        public LogEvent InvalidCodePath(string format, params object[] args)
         {
             return InvalidCodePath(null, format, args);
         }
 
-        public LogEvent InvalidCodePath(Action<LogEvent> appendData, string format, params string[] args)
+        public LogEvent InvalidCodePath(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Log(appendData, "InvalidCodePath", null, format, args);
         }
@@ -226,7 +227,7 @@ namespace CalbucciLib
         // PRIVATE
         //
         // ============================================================
-        private LogEvent Log(Action<LogEvent> appendData, string type, Exception ex, string format, params string[] args)
+        private LogEvent Log(Action<LogEvent> appendData, string type, Exception ex, string format, params object[] args)
         {
             // ThreadAbortException is a special exception that happens when a thread is being shut down
             if (ex != null && ex is ThreadAbortException)
@@ -239,18 +240,21 @@ namespace CalbucciLib
                     format = ex.Message;
             }
 
-            if (format.IndexOf('{') >= 0)
+            if (format != null)
             {
-                logEvent.Message = string.Format(format, args);
-            }
-            else
-            {
-                logEvent.Message = format;
-                if (args != null && args.Length > 0)
+                if (format.IndexOf('{') >= 0)
                 {
-                    for (int i = 0; i < args.Length; i++)
+                    logEvent.Message = string.Format(format, args);
+                }
+                else
+                {
+                    logEvent.Message = format;
+                    if (args != null && args.Length > 0)
                     {
-                        logEvent.Add("Args", i.ToString(), args[i]);
+                        for (int i = 0; i < args.Length; i++)
+                        {
+                            logEvent.Add("Args", i.ToString(), args[i]);
+                        }
                     }
                 }
             }
@@ -278,7 +282,7 @@ namespace CalbucciLib
                 }
                 catch (Exception ex2)
                 {
-                    InternalCrash(ex2);
+                    ReportCrash(ex2);
                 }
             }
             if (ShouldLogCallback != null)
@@ -315,12 +319,12 @@ namespace CalbucciLib
                             mm.Body = logEvent.Htmlify();
                             mm.IsBodyHtml = true;
 
-                            SmtpClient.SendAsync(mm, null);
+                            SmtpClient.Send(mm);
                         }
                     }
                     catch (Exception ex2)
                     {
-                        InternalCrash(ex2);
+                        ReportCrash(ex2);
                     }
 
                 }
@@ -336,7 +340,7 @@ namespace CalbucciLib
                     }
                     catch (Exception ex2)
                     {
-                        InternalCrash(ex2);
+                        ReportCrash(ex2);
                     }
                 }
             }
@@ -511,7 +515,7 @@ namespace CalbucciLib
                 }
                 catch (Exception ex)
                 {
-                    InternalCrash(ex);
+                    ReportCrash(ex);
                 }
             }
         }
@@ -665,7 +669,7 @@ namespace CalbucciLib
             return _SensitiveInfo.Any(si => itemName.IndexOf(si, StringComparison.CurrentCultureIgnoreCase) >= 0);
         }
 
-        private void InternalCrash(Exception ex)
+        private void ReportCrash(Exception ex)
         {
             if (Debugger.IsAttached)
                 Debugger.Break();
@@ -691,7 +695,7 @@ namespace CalbucciLib
         //
         // ============================================================
 
-        static public LogEvent LogError(Action<LogEvent> appendData, string format, params string[] args)
+        static public LogEvent LogError(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Default.Error(appendData, format, args);
         }
@@ -701,62 +705,62 @@ namespace CalbucciLib
             return LogError(null, format, args);
         }
 
-        static public LogEvent LogWarning(Action<LogEvent> appendData, string format, params string[] args)
+        static public LogEvent LogWarning(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Default.Warning(appendData, format, args);
         }
 
-        static public LogEvent LogWarning(string format, params string[] args)
+        static public LogEvent LogWarning(string format, params object[] args)
         {
             return LogWarning(null, format, args);
         }
 
-        static public LogEvent LogInfo(Action<LogEvent> appendData, string format, params string[] args)
+        static public LogEvent LogInfo(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Default.Info(appendData, format, args);
         }
 
-        static public LogEvent LogInfo(string format, params string[] args)
+        static public LogEvent LogInfo(string format, params object[] args)
         {
             return LogInfo(null, format, args);
         }
 
-        static public LogEvent LogFatal(Action<LogEvent> appendData, string format, params string[] args)
+        static public LogEvent LogFatal(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Default.Fatal(appendData, format, args);
         }
 
-        static public LogEvent LogFatal(string format, params string[] args)
+        static public LogEvent LogFatal(string format, params object[] args)
         {
             return LogFatal(null, format, args);
         }
 
-        static public LogEvent LogException(Action<LogEvent> appendData, Exception ex, string format, params string[] args)
+        static public LogEvent LogException(Action<LogEvent> appendData, Exception ex, string format = null, params object[] args)
         {
             return Default.Exception(appendData, ex, format, args);
         }
 
-        static public LogEvent LogException(Exception ex, string format, params string[] args)
+        static public LogEvent LogException(Exception ex, string format, params object[] args)
         {
             return Default.Exception(ex, format, args);
         }
 
-        static public LogEvent LogPerfIssue(Action<LogEvent> appendData, string format, params string[] args)
+        static public LogEvent LogPerfIssue(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Default.PerfIssue(appendData, format, args);
         }
 
-        static public LogEvent LogPerfIssue(string format, params string[] args)
+        static public LogEvent LogPerfIssue(string format, params object[] args)
         {
             return Default.PerfIssue(format, args);
         }
 
-        static public LogEvent LogInvalidCodePath(Action<LogEvent> appendData, string format, params string[] args)
+        static public LogEvent LogInvalidCodePath(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Default.InvalidCodePath(appendData, format, args);
         }
 
-        static public LogEvent LogInvalidCodePath(string format, params string[] args)
+        static public LogEvent LogInvalidCodePath(string format, params object[] args)
         {
             return Default.InvalidCodePath(format, args);
         }

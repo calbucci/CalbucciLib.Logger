@@ -43,5 +43,15 @@ namespace CalbucciLib.Tests
             Assert.AreEqual(logEvent.Get("Exception", "Type"), "System.ArgumentNullException");
             
         }
+
+        [TestMethod()]
+        public void EmailTest()
+        {
+            var customLogger = new Logger();
+            customLogger.SendToEmailAddress = "marcelo@calbucci.com";
+
+            customLogger.Error("This is an error");
+
+        }
     }
 }
