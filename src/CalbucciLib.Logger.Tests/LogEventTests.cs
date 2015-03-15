@@ -76,7 +76,16 @@ namespace CalbucciLib.Tests
             Assert.IsNotNull(html);
         }
 
-        
+        [TestMethod()]
+        public void HtmlifyTest2()
+        {
+            var logEvent = Logger.LogInfo("Info message");
+
+            string html = logEvent.Htmlify();
+
+            Assert.IsNotNull(html);
+        }
+
 
         
     }

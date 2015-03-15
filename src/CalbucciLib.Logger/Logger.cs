@@ -350,6 +350,8 @@ namespace CalbucciLib
 
         private void AppendException(LogEvent logEvent, Exception ex)
         {
+            if (ex == null)
+                return;
             AppendException(logEvent.GetOrCreateCategory("Exception"), ex);
         }
 
@@ -608,7 +610,7 @@ namespace CalbucciLib
                     }
                     skipLoggerClass = false;
                 }
-                string methodName = methodType != null ? methodType.FullName : "?";
+                string methodName = methodType != null ? methodType.FullName + "." + method.Name : "?";
                 int lineNumber = frame.GetFileLineNumber();
                 if (sigCount < 4 && !methodName.StartsWith("System.", StringComparison.CurrentCultureIgnoreCase)
                     && !methodName.StartsWith("Microsoft.", StringComparison.CurrentCultureIgnoreCase))

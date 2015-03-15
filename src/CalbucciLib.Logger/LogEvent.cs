@@ -149,7 +149,7 @@ namespace CalbucciLib
 
 			foreach (var de in info)
 			{
-                sb.AppendFormat(@"<div><i style=""display:inline-block;min-width:5em"">{0}</i> ", HttpUtility.HtmlEncode(de.Key));
+                sb.AppendFormat(@"<div><i style=""display:inline-block;min-width:6em"">{0}</i> ", HttpUtility.HtmlEncode(de.Key));
 				if (de.Value == null)
 				{
 					sb.Append(@": (null)");
@@ -159,6 +159,8 @@ namespace CalbucciLib
                     sb.Append(@"(dictionary):</div>");
 					sb.Append(@"<div style=""padding-left:2em;"">");
 					var dic = ((IDictionary) de.Value);
+				    if (dic.Count == 0)
+				        continue;
 					foreach (var k in dic.Keys)
 					{
 						var value = dic[k];
@@ -172,6 +174,9 @@ namespace CalbucciLib
                     sb.Append(@"(list):</div>");
 					sb.Append(@"<div style=""padding-left:2em;"">");
 				    var list = de.Value as IList;
+                    if(list.Count == 0)
+                        continue;
+				        
 					for(int i = 0; i < list.Count; i++)
 					{
 					    var val = list[i];
