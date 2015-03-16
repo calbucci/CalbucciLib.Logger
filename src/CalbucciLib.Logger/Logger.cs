@@ -549,6 +549,8 @@ namespace CalbucciLib
             var cat = logEvent.GetOrCreateCategory("HttpSession");
 
             var session = ctx.Session;
+	        if (session == null)
+		        return;
 
             cat["SessionID"] = session.SessionID;
             cat["IsNewSession"] = session.IsNewSession;
@@ -571,7 +573,7 @@ namespace CalbucciLib
         {
             var user = ctx.User;
 
-            if (!user.Identity.IsAuthenticated)
+            if (user == null || !user.Identity.IsAuthenticated)
                 return;
 
             var cat = logEvent.GetOrCreateCategory("HttpUser");

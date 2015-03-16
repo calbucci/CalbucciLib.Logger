@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 namespace CalbucciLib.Tests
 {
     [TestClass()]
-    public class LogEventTests
+	public class LogEventTests
     {
         [TestMethod()]
         public void AddTest()
@@ -85,6 +85,17 @@ namespace CalbucciLib.Tests
 
             Assert.IsNotNull(html);
         }
+
+		[TestMethod()]
+		public void AddUserDataTest()
+		{
+			string guid = Guid.NewGuid().ToString();
+
+			var logEvent = new LogEvent("Error");
+			logEvent.AddUserData("TestInfo", guid);
+
+			Assert.AreEqual(guid, logEvent.GetUserData("TestInfo"));
+		}
 
 
         

@@ -1,15 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Security.Claims;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
+using System.Web.Security;
 using CalbucciLib;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
 
 namespace CalbucciLib.Tests
 {
     [TestClass()]
-    public class LoggerTests
+	public class LoggerTests
     {
         [TestMethod()]
         public void LogErrorTest()
@@ -53,5 +60,25 @@ namespace CalbucciLib.Tests
             customLogger.Error("This is an error");
 
         }
+
+		[TestMethod()]
+		public void LogWarningTest()
+		{
+			HttpContext.Current = new HttpContext(new HttpRequest("", "http://tempuri.org", ""),
+					new HttpResponse(new StringWriter()));
+
+			string userName = "John Doe";
+			var context = new HttpContext(new HttpRequest(null, "http://blog.calbucci.com", null), new HttpResponse(null));
+			context.User = Mock.Of<ClaimsPrincipal>(cp =>
+				cp.Identity.IsAuthenticated == true &&
+				cp.Identity.Name == userName
+				);
+
+			HttpContext.Current = context;
+			
+			var logEvent = Logger.LogWarning("Warning 1", "abc");
+
+			Assert.AreEqual(logEvent.Get("HttpUser", "Name"), userName);
+		}
     }
 }
