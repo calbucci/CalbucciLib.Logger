@@ -52,7 +52,7 @@ public void SetStatus(object obj, Status newStatus)
     var objWithStatus = obj as IObjectWithStatus;
     if(objWithStatus == null)
     {
-        Logger.LogError("Can't set status on object that doesn't inherit from IObjectWithStatus", obj, newStatus);
+        Logger.LogError("Must inherit from IObjectWithStatus", obj, newStatus);
         return;
     }
     // ...
@@ -86,7 +86,17 @@ protected void Application_Error(Object sender, EventArgs e)
     }
 }
 ```
-
+Or, more commonly used:
+```csharp
+try
+{
+    CallbackExecute(param);
+}
+catch(Exception ex)
+{
+    Logger.LogException(ex, null, param);
+}
+```
 
 #### 6) Perf
 Perf logging is to indicate a performance issue that just started occuring in the system. It's quite common for us to architect code that works well in the early days, but as changes everywhere occur or the usage grows, perf issues start to show up.
@@ -119,14 +129,15 @@ switch(user.Status)
 
 
 ## More Info
-### LogEvent
+### LogEvent class
 Each call to LogXXX creates a LogEvent object. This object is a container that can be serialized (to XML, JSON, HTML, Text, etc.) to be sent via email, to a SQL or NoSQL database, or to a third party API (through LogExtensions). It has 6 built-in properties and a Property Bag called "Information" (see LogEvent.cs):
-- Message (string): The logging message
-- Type (string): The type of logging (defaults: "Info", "Warning", "Error", "Exception", "Fatal", "PerfIssue" and "InvalidCodePath")
-- StackSignature (string): A hash of the first 4 stack frames (skipping CalbucciLib.Logger, System.* and Microsoft.*) that uniquely identifies that call stack for easier log grouping.
-- UniqueId (string): A new guid to uniquely identify this instance.
-- EventDate (DateTime): The local time of the current event.
-- EventDateUtc (DateTime): The UTC time of the current event (preferred for DB storage).
+- **Message** (string): The logging message
+- **Type** (string): The type of logging (defaults: "Info", "Warning", "Error", "Exception", "Fatal", "PerfIssue" and "InvalidCodePath")
+- **StackSignature** (string): A hash of the first 4 stack frames (skipping CalbucciLib.Logger, System.* and Microsoft.*) that uniquely identifies that call stack for easier log grouping.
+- **UniqueId** (string): A new guid to uniquely identify this instance.
+- **EventDate** (DateTime): The local time of the current event.
+- **EventDateUtc** (DateTime): The UTC time of the current event (preferred for DB storage).
+
 #### "Information" Property Bag
 The Information property bag is actually a collection of property bags. The first parameter is called "Category" that defines the bag name, then a Dictionary of name-value pairs.
 ```csharp
@@ -142,7 +153,9 @@ The following categories are added automatically:
 - "Process": Properties from the current running process and Assembly.
 - "Computer": Properties of the current machine the process is running on.
 - "Exception": Properties of the Exception (if any)
+
 You can add, remove or update properties, categories and values.
+
 #### Adding a new category
 ```csharp
 logEvent.Add("MyCustomCategory", propertyName, propertyValue);
@@ -150,7 +163,7 @@ logEvent.Add("MyCustomCategory", propertyName, propertyValue);
 var category = logEvent.GetOrCreateCategory("MyCustomCategory");
 category[propertyName] = propertyValue;
 ```
-**WARNING**: You should avoid propertyValue objects that cannot be serialized. At minimum the should have a meaningful implementation of ToString().
+**WARNING**: You should avoid propertyValue objects that cannot be serialized. At minimum they should have a meaningful implementation of ToString().
 
 
 ### Logging Parameters
@@ -159,7 +172,7 @@ All Logging functions support two types of calls:
     LogXXX(string format, params object[] args)
     LogXXX(Action<LogEvent> appendData, string format, params object[] args)
 ```
-The "format" string follows the standard string.Format syntax:
+The "format" string follows the standard string.Format() syntax:
 ```csharp
     LogError("User {0} invalid state of {1}", user.UserId, user.State);
 ```
@@ -199,10 +212,26 @@ Logger.Default.SmtpClient = sendGridSmtp;
 
 
 ### Configuration
+In addition to the built-in email notification described above, a few more parameters are available for you to configure the Logger behavior (all part of Logger.Default or an instance of Logger):
+- **MaxHttpFormValueLength**: The maximum numbers of characters to store when serializing the HTTP POST form content (if zero or negative, it means don't serialize the FORM post). For security purposes, all FORM data that has certain substrings ("credit", "pass", "pw", "card", "ssn", etc.) is not serialized.
+- **MaxHttpBodyLength**: If the HTTP REQUEST is a POST/PUT and it has a body and the content type of the body is text, it will be stored in LogEvent with the maximum of MaxHttpBodyLength characters. If this value is zero it means to skip serializing the body.
+- **IncludeFileNamesInCallStack**: Includes the file names in the call stack serialization. (default: false)
+- **IncludeSessionObjects**: Serialize the SessionState (default: false)
 
 ### Multiple Loggers
+There is a singleton pattern for the default logger, which is the most common use:
+```csharp
+Logger.Default
+```
+But multiple instances can be created as well:
+```csharp
+Logger SyncLogger = new Logger() { ... }
+Logger UserLogger = new Logger() { ... }
+Logger MixpanelLogger = new Logger() { ... }
+```
 
 ### Adding Log Extensions
+
 
 ### Log Filtering (ShouldLogCallback)
 
