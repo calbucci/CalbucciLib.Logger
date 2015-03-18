@@ -29,6 +29,7 @@ Info should be rarely used or used only temporarily to avoid creating too much n
 
 ```csharp
 Logger.LogInfo("Sync successful", user.UserId)
+```
 
 #### 2) Warning
 Warning should be used to indicate a condition the code handled itself, but it wasn't "ideal". For example, an SDK returned a value outside of the range but the code handled that case by using a default (or max).
@@ -40,7 +41,7 @@ if(dateOfBirth < oldest)
     Logger.LogWarning("Date of birth is older than expected", dateOfBirth);
     dateOfBirth = null;
 }
-
+```
 
 #### 3) Error
 The difference between an Error and a Warning is that an Error cannot be gracefully handled by code and it it's a bug that must be addressed at some point. 
@@ -56,7 +57,7 @@ public void SetStatus(object obj, Status newStatus)
     }
     // ...
 }
-
+```
 
 #### 4) Fatal
 Fatal is a type of Error that prevents the system (part or in full) form working properly. Fatal should be used when someone should be paged and take immediate care of the problem. It's urgent and critical!
@@ -69,7 +70,7 @@ if(string.IsNullOrEmpty(sendGridUserName) || string.IsNullOrEmpty(sendGridPasswo
     Logger.LogFatal("SendGrid account not configured correctly", sendGridUserName);
     throw new Exception("SendGrid account not configured correctly");
 }
-
+```
 
 
 #### 5) Exception
@@ -84,7 +85,7 @@ protected void Application_Error(Object sender, EventArgs e)
         Logger.LogException(exception);
     }
 }
-
+```
 
 
 #### 6) Perf
@@ -98,7 +99,7 @@ foreach(var user in db.Users)
     }
     // If the operation above takes more than 30 seconds than a call to Logger.LogPerfIssue is made
 }
-
+```
 
 #### 7) InvalidCodePath
 This kind of logging is useful primarily in future proofing your code, when certain functions were expecting a specific range of values, but calls from the upper layers changed and started passing invalid values.
@@ -113,7 +114,7 @@ switch(user.Status)
         Logger.LogInvalidCodePath("Unknown user status", user.Status);
         break;
 }
-
+```
 
 
 
@@ -130,6 +131,7 @@ Each call to LogXXX creates a LogEvent object. This object is a container that c
 The Information property bag is actually a collection of property bags. The first parameter is called "Category" that defines the bag name, then a Dictionary of name-value pairs.
 ```csharp
 Dictionary<string, Dictionary<string, object>> Information
+```
 The following categories are added automatically:
 - "HttpUser": Properties from HttpContext.Current.User
 - "HttpRequest": Properties from HttpContext.Current.Request
@@ -147,7 +149,8 @@ logEvent.Add("MyCustomCategory", propertyName, propertyValue);
 // or
 var category = logEvent.GetOrCreateCategory("MyCustomCategory");
 category[propertyName] = propertyValue;
-WARNING: You should avoid propertyValue objects that cannot be serialized. At minimum the should have a meaningful implementation of ToString().
+```
+**WARNING**: You should avoid propertyValue objects that cannot be serialized. At minimum the should have a meaningful implementation of ToString().
 
 
 ### Logging Parameters
@@ -155,12 +158,15 @@ All Logging functions support two types of calls:
 ```csharp
     LogXXX(string format, params object[] args)
     LogXXX(Action<LogEvent> appendData, string format, params object[] args)
+```
 The "format" string follows the standard string.Format syntax:
 ```csharp
     LogError("User {0} invalid state of {1}", user.UserId, user.State);
+```
 In addition, the parameters don't have to be embedded in the string and they will be simply serialized as "Args" properties.
 ```csharp
     LogError("User has invalid state", user.UserId, user.State);
+```
 The former syntax is actually preferred if you are going to use the error message in aggregate to identify volume of errors.
 If you have more complex data to be logged you can provide a callback on appendData to be called for you to append additional data information.
 ```csharp
@@ -168,7 +174,7 @@ If you have more complex data to be logged you can provide a callback on appendD
         logEvent.AddUserData("IncomingCall", phonecall.Number);
         logEvent.Add("CallServer", "ServerId", callserver.ServerId);
     }, "User has invalid state", user.UserId, user.State);
-
+```
 
 
 ### Automatic Email Notification
@@ -176,6 +182,7 @@ CalbucciLib.Logger has a built-in email notification extension (You can create y
 To enable email notification all you need to do is set the SendToEmailAddress property.
 ```csharp
 Logger.Default.SendToEmailAddress = "marcelo@calbucci.com";
+```
 If you want more control, you have several knobs:
 - SendToEmailAddressFatal: A different email address to deal with "Fatal" errors
 - EmailFrom: Set the default "from" field
@@ -188,6 +195,7 @@ Logger.Default.SendToEmailAddressFatal = "911@calbucci.com";
 Logger.Default.EmailFrom = new MailAddress("Logger", "logger@calbucci.com");
 Logger.Default.SubjectLinePrefix = "[ProjectX]";
 Logger.Default.SmtpClient = sendGridSmtp;
+```
 
 
 ### Configuration
