@@ -429,57 +429,60 @@ namespace CalbucciLib
                 }
             }
 
-            var form = req.Form;
-            if (form.Keys.Count > 0)
-            {
-                var formInfo = new Dictionary<string, string>(form.Keys.Count);
-                cat["Form"] = formInfo;
+	        if (MaxHttpFormValueLength > 0)
+	        {
+		        var form = req.Form;
+		        if (form.Keys.Count > 0)
+		        {
+			        var formInfo = new Dictionary<string, string>(form.Keys.Count);
+			        cat["Form"] = formInfo;
 
-                for (int i = 0; i < form.Keys.Count; i++)
-                {
-                    string key = form.GetKey(i);
-                    string keyName = "Form:" + key;
-                    string[] vals = form.GetValues(i);
-                    if (vals != null && vals.Length != 0 && !string.IsNullOrWhiteSpace(vals[0]) && IsSensitiveItem(key))
-                    {
-                        if (vals.Length == 1)
-                        {
-                            formInfo[keyName] = string.Format("[removed for security] Length: {0}", vals[0].Length);
-                        }
-                        else
-                        {
-                            for (int j = 0; j < vals.Length; j++)
-                            {
-                                formInfo[keyName + ":" + j] = string.Format("[removed for security] Length: {0}",
-                                    vals[j] != null ? vals[j].Length : 0);
-                            }
-                        }
-                        continue;
-                    }
-                    if (vals == null || vals.Length == 0)
-                    {
-                        formInfo[keyName] = "";
-                    }
-                    else if (vals.Length == 1)
-                    {
-                        formInfo[keyName] = vals[0] != null
-                            ? (vals[0].Length > MaxHttpFormValueLength ? vals[0].Substring(0, Int32.MaxValue) + "..." : vals[0])
-                            : "";
+			        for (int i = 0; i < form.Keys.Count; i++)
+			        {
+				        string key = form.GetKey(i);
+				        string keyName = "Form:" + key;
+				        string[] vals = form.GetValues(i);
+				        if (vals != null && vals.Length != 0 && !string.IsNullOrWhiteSpace(vals[0]) && IsSensitiveItem(key))
+				        {
+					        if (vals.Length == 1)
+					        {
+						        formInfo[keyName] = string.Format("[removed for security] Length: {0}", vals[0].Length);
+					        }
+					        else
+					        {
+						        for (int j = 0; j < vals.Length; j++)
+						        {
+							        formInfo[keyName + ":" + j] = string.Format("[removed for security] Length: {0}",
+								        vals[j] != null ? vals[j].Length : 0);
+						        }
+					        }
+					        continue;
+				        }
+				        if (vals == null || vals.Length == 0)
+				        {
+					        formInfo[keyName] = "";
+				        }
+				        else if (vals.Length == 1)
+				        {
+					        formInfo[keyName] = vals[0] != null
+						        ? (vals[0].Length > MaxHttpFormValueLength ? vals[0].Substring(0, Int32.MaxValue) + "..." : vals[0])
+						        : "";
 
-                    }
-                    else
-                    {
-                        for (int t = 0; t < vals.Length; t++)
-                        {
-                            formInfo[keyName + ":" + t] = vals[t] != null
-                                ? (vals[t].Length > MaxHttpFormValueLength ? vals[t].Substring(0, Int32.MaxValue) + "..." : vals[t])
-                                : "";
-                        }
-                    }
-                }
-            }
+				        }
+				        else
+				        {
+					        for (int t = 0; t < vals.Length; t++)
+					        {
+						        formInfo[keyName + ":" + t] = vals[t] != null
+							        ? (vals[t].Length > MaxHttpFormValueLength ? vals[t].Substring(0, Int32.MaxValue) + "..." : vals[t])
+							        : "";
+					        }
+				        }
+			        }
+		        }
+	        }
 
-            var files = req.Files;
+	        var files = req.Files;
             if (files.Count > 0)
             {
                 var fileInfo = new Dictionary<string, object>(files.Count);
@@ -495,31 +498,34 @@ namespace CalbucciLib
 
             string contentType = req.ContentType.ToLower();
 
-            if (contentType.Contains("application/json")
-                || contentType.Contains("text/")
-                || contentType.Contains("html/")
-                || contentType.Contains("application/xml")
-                || contentType.Contains("+xml"))
-            {
-                try
-                {
-                    using (var sr = new StreamReader(req.InputStream))
-                    {
-                        if (req.InputStream.CanSeek)
-                            req.InputStream.Position = 0;
+	        if (MaxHttpBodyLength > 0)
+	        {
+		        if (contentType.Contains("application/json")
+		            || contentType.Contains("text/")
+		            || contentType.Contains("html/")
+		            || contentType.Contains("application/xml")
+		            || contentType.Contains("+xml"))
+		        {
+			        try
+			        {
+				        using (var sr = new StreamReader(req.InputStream))
+				        {
+					        if (req.InputStream.CanSeek)
+						        req.InputStream.Position = 0;
 
-                        string bodyContent = sr.ReadToEnd();
-                        if (bodyContent.Length > MaxHttpBodyLength)
-                            bodyContent = bodyContent.Substring(0, MaxHttpBodyLength) + "...";
+					        string bodyContent = sr.ReadToEnd();
+					        if (bodyContent.Length > MaxHttpBodyLength)
+						        bodyContent = bodyContent.Substring(0, MaxHttpBodyLength) + "...";
 
-                        cat["Body"] = bodyContent;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ReportCrash(ex);
-                }
-            }
+					        cat["Body"] = bodyContent;
+				        }
+			        }
+			        catch (Exception ex)
+			        {
+				        ReportCrash(ex);
+			        }
+		        }
+	        }
         }
 
         private void AppendHttpResponseInfo(LogEvent logEvent, HttpContext ctx)
