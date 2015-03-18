@@ -25,10 +25,10 @@ There are several types of built-in errors:
 ## Pattern Examples
  
 #### 1) Info
-Info should be rarely used or used only temporarily to avoid creating too much noise. One of the biggest problems with typical error logging is too much data, making it hard to find the important and urgent issues with the system.
+Info should be rarely used or used only temporarily to avoid creating too much noise. One of the biggest problems with typical error logging is too much data, making it hard to find the important and urgent issues with the system. You should use Info when you are trying to investigate a problem and turn it off later.
 
 ```csharp
-TODO
+Logger.LogInfo("Sync successful", user.UserId)
 
 #### 2) Warning
 Warning should be used to indicate a condition the code handled itself, but it wasn't "ideal". For example, an SDK returned a value outside of the range but the code handled that case by using a default (or max).
