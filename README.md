@@ -304,7 +304,12 @@ Logger.Default.ShouldLogCallback = LogLimits.ShouldLog;
 ```
 
 ### InternalCrashCallback (a.k.a., when error logging crashes)
-
+If something goes wrong with logging and throws an exception, the code handles it gracefully, but the information on what went wrong is lost. It's a bad idea to try to Log a problem with the Logger using the same mechanic. For example, if the problem is a disk full, trying to write a disk-full log error to disk won't make things better for you. The best solution is to have an alternate log extension just for this cases. Calling a third party API might be a good idea most of the times (unless you are having network issues). Sending an email message is a good idea if you typicall save to disk or DB, and saving to disk is a good idea if you usually use email. 
+```csharp
+Logger.Default.InternalCrashCallback = exception => { 
+    // Do something different with 'exception' but make sure not to call Logger.* or any other function that calls Logger.*
+};
+```
 
 ## Contributors
 
