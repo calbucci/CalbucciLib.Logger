@@ -231,9 +231,77 @@ Logger MixpanelLogger = new Logger() { ... }
 ```
 
 ### Adding Log Extensions
+The only thing CalbucciLib.Logger will do by default is to send an email with the logging info. But you might want to do something different with it, like save to the file system, send to a SQL or NoSQL database, call a third party API that aggregates errors, or create your own SMS/Pager mechanic to alert developers/DevOps of problems. Each of these tasks can be easily accomplished via a Log Extension. Each Logger (or the default Logger) can have as many extensions as necessary. The system works this way:
+1. A LogXXX function is called (or loggerInstance.XXX)
+2. A LogEvent is created and default data is aggregated (HttpContext info, call stack, process info, etc.)
+3. Optional data is added to LogEvent via "Action<LogEvent> appendData" parameter
+4. Logger.ShouldLogCallback is called (see below)
+5. Email is sent (if email is configured)
+6. Each registered Log Extension is called with the LogEvent. 
 
+For example, you might decide that you want to save each log file to a directory to be aggregated by a third party service. Here is how you implement your log extension:
+```csharp
+Logger.Default.AddExtension(logEvent => { 
+    string filePath = "d:\log\" + logEvent.EventDate.ToString("yyyyMMddHHmmss") + "-" + logEvent.Type + "-" + logEvent.UniqueId + ".json";
+    File.WriteAllText(filePath, logEvent.ToJson(true));
+});
+```
+Or, you might want to get a Twilio SMS message sent to your phone every time there is a fatal error:
+```csharp
+static DateTime LastFatalSmsSent = DateTime.MinValue;
+static int SmsCountLeft = 10;
+Logger.Default.AddExtension(logEvent => { 
+    if(logEvent.Type != "Fatal")
+        return; // only Fatal events
+    TimeSpan ts = DateTime.Now - LastFatalSmsSent;
+    if(ts.TotalMinutes < 5 || SmsCountLeft == 0)
+        return; // don't send more than one text every 5 minutes or more than 10 text messages in total
+    Interlocked.Increment(ref SmsCountLeft);
+    TwilioClient = new TwilioRestClient(twilioAccountSid, twilioAuthToken);
+    TwilioClient.SendSmsMessage(fromPhoneNumber, toPhoneNumber, logEvent.Message);
+});
+```
 
 ### Log Filtering (ShouldLogCallback)
+Sometimes it's useful to filter out LogEvents because they are being tracked somewhere else, have already been logged or they are too noise. Here is a simple way to not log the same event more than 50 times per hour.
+```csharp
+public class LogLimits
+{
+    static Dictionary<string, int> _LogCounter = new Dictionary<string, int>();
+    public static int MaximumEventsPerHour = 50;
+    static LogLimits()
+    {
+        var counterCleanup = new Timer(state =>
+        {
+            lock (typeof (LogLimits))
+            {
+                _LogCounter = new Dictionary<string, int>();
+            }
+        }, null, TimeSpan.FromHours(1), TimeSpan.FromHours(1));
+    }
+
+    static public bool ShouldLog(LogEvent logEvent)
+    {
+        if (string.IsNullOrEmpty(logEvent.StackSignature))
+             return true; // Can't determine if this event has been logged
+
+        lock (typeof (LogLimits))
+        {
+            int count = 0;
+            _LogCounter.TryGetValue(logEvent.StackSignature, out count);
+            if (count >= MaximumEventsPerHour)
+                return false;  // Don't log this event anymore
+            count++;
+            _LogCounter[logEvent.StackSignature] = count;
+            return true; // Yes, log it
+        }
+    }
+}
+
+// ...
+// Set the ShouldLogCallback
+Logger.Default.ShouldLogCallback = LogLimits.ShouldLog;
+```
 
 ### InternalCrashCallback (a.k.a., when error logging crashes)
 
@@ -241,580 +309,6 @@ Logger MixpanelLogger = new Logger() { ... }
 ## Contributors
 
 - Logger was originally created by *Marcelo Calbucci* ([blog.calbucci.com](http://blog.calbucci.com) | [@calbucci](http://twitter.com/calbucci))
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	
 	
