@@ -139,7 +139,7 @@ Each call to LogXXX creates a LogEvent object. This object is a container that c
 - **EventDateUtc** (DateTime): The UTC time of the current event (preferred for DB storage).
 
 #### "Information" Property Bag
-The Information property bag is actually a collection of property bags. The first parameter is called "Category" that defines the bag name, then a Dictionary of name-value pairs.
+The Information property bag is actually a collection of property bags. The first parameter is called "Collection" that defines the bag name, then a Dictionary of name-value pairs.
 ```csharp
 Dictionary<string, Dictionary<string, object>> Information
 ```
@@ -148,7 +148,7 @@ The following categories are added automatically:
 - "HttpRequest": Properties from HttpContext.Current.Request
 - "HttpResponse": Properties from HttpContext.Current.Response
 - "HttpSession": Properties from HttpContext.Current.Session (by default this is not include on logging unless you set IncludeSessionObjects to true)
-- "CallStack": The call stack frames (you can set IncludeFileNamesInCallStack to true to log the file names). Not this is the call stack of where LogXXX was called, not of the exception itself which will be logged on "Exception" category.
+- "CallStack": The call stack frames (you can set IncludeFileNamesInCallStack to true to log the file names). Not this is the call stack of where LogXXX was called, not of the exception itself which will be logged on "Exception" collection.
 - "Thread": Properties from the current thread.
 - "Process": Properties from the current running process and Assembly.
 - "Computer": Properties of the current machine the process is running on.
@@ -156,12 +156,12 @@ The following categories are added automatically:
 
 You can add, remove or update properties, categories and values.
 
-#### Adding a new category
+#### Adding a new Collection
 ```csharp
-logEvent.Add("MyCustomCategory", propertyName, propertyValue);
+logEvent.Add("MyCustomCollection", propertyName, propertyValue);
 // or
-var category = logEvent.GetOrCreateCategory("MyCustomCategory");
-category[propertyName] = propertyValue;
+var collection = logEvent.GetOrCreateCollection("MyCustomCollection");
+collection[propertyName] = propertyValue;
 ```
 **WARNING**: You should avoid propertyValue objects that cannot be serialized. At minimum they should have a meaningful implementation of ToString().
 

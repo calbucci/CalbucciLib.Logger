@@ -34,12 +34,12 @@ namespace CalbucciLib.Tests
             logEvent.Message = "Error message";
             logEvent.StackSignature = "1234";
 
-            var catTest = logEvent.GetOrCreateCategory("Test");
-            catTest["a"] = "abc";
-            catTest["b"] = 27;
-            catTest["c"] = 13.1;
-            catTest["d"] = new List<string>() {"abc", "def"};
-            catTest["e"] = new DateTime(2015, 3, 14, 9, 26, 53);
+            var collTest = logEvent.GetOrCreateCollection("Test");
+            collTest["a"] = "abc";
+            collTest["b"] = 27;
+            collTest["c"] = 13.1;
+            collTest["d"] = new List<string>() {"abc", "def"};
+            collTest["e"] = new DateTime(2015, 3, 14, 9, 26, 53);
 
             string json = logEvent.ToJson(true);
 
@@ -52,9 +52,9 @@ namespace CalbucciLib.Tests
             Assert.AreEqual(logEvent.Message, logEvent2.Message);
             Assert.AreEqual(logEvent.StackSignature, logEvent2.StackSignature);
 
-            var cat2 = logEvent2.GetCategory("Test");
+            var coll2 = logEvent2.GetCollection("Test");
 
-            Assert.IsTrue(CompareUtils.AreEqual(catTest, cat2));
+            Assert.IsTrue(CompareUtils.AreEqual(collTest, coll2));
         }
 
         [TestMethod()]
@@ -64,12 +64,12 @@ namespace CalbucciLib.Tests
             logEvent.Message = "Error message";
             logEvent.StackSignature = "1234";
 
-            var catTest = logEvent.GetOrCreateCategory("Test");
-            catTest["a"] = "abc";
-            catTest["b"] = 27;
-            catTest["c"] = 13.1;
-            catTest["d"] = new List<string>() { "abc", "def" };
-            catTest["e"] = new DateTime(2015, 3, 14, 9, 26, 53);
+            var collTest = logEvent.GetOrCreateCollection("Test");
+            collTest["a"] = "abc";
+            collTest["b"] = 27;
+            collTest["c"] = 13.1;
+            collTest["d"] = new List<string>() { "abc", "def" };
+            collTest["e"] = new DateTime(2015, 3, 14, 9, 26, 53);
 
             string html = logEvent.Htmlify();
 

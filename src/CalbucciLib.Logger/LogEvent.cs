@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -43,27 +44,27 @@ namespace CalbucciLib
         //
         // ============================================================
 
-		public void Add(string categoryName, string name, object value)
+		public void Add(string collectionName, string name, object value)
 		{
-		    if (string.IsNullOrWhiteSpace(categoryName) || string.IsNullOrWhiteSpace(name))
+		    if (string.IsNullOrWhiteSpace(collectionName) || string.IsNullOrWhiteSpace(name))
 		        return;
 
-			var category = GetOrCreateCategory(categoryName);
-			category[name] = value;
+			var collection = GetOrCreateCollection(collectionName);
+			collection[name] = value;
 		}
 
 
-	    public object Get(string categoryName, string name)
+	    public object Get(string collectionName, string name)
 	    {
-	        if (string.IsNullOrWhiteSpace(categoryName) || string.IsNullOrWhiteSpace(name))
+	        if (string.IsNullOrWhiteSpace(collectionName) || string.IsNullOrWhiteSpace(name))
 	            return null;
 
-	        var category = GetCategory(categoryName);
-	        if (category == null)
+	        var collection = GetCollection(collectionName);
+	        if (collection == null)
 	            return null;
 
 	        object ret = null;
-	        category.TryGetValue(name, out ret);
+	        collection.TryGetValue(name, out ret);
 	        return ret;
 	    }
 
@@ -79,33 +80,33 @@ namespace CalbucciLib
 
         // ============================================================
         //
-        // CATEGORY
+        // COLLECTIONS
         //
         // ============================================================
 
-		public Dictionary<string, object> GetOrCreateCategory(string categoryName)
+		public Dictionary<string, object> GetOrCreateCollection(string collectionName)
 		{
-		    if (string.IsNullOrWhiteSpace(categoryName))
+		    if (string.IsNullOrWhiteSpace(collectionName))
 		        return null;
 
-			Dictionary<string, object> category;
-			if (!Information.TryGetValue(categoryName, out category))
+			Dictionary<string, object> collection;
+			if (!Information.TryGetValue(collectionName, out collection))
 			{
-				category = new Dictionary<string, object>();
-				Information[categoryName] = category;
+				collection = new Dictionary<string, object>();
+				Information[collectionName] = collection;
 
 			}
-			return category;
+			return collection;
 		}
 
-        public Dictionary<string, object> GetCategory(string categoryName)
+        public Dictionary<string, object> GetCollection(string collectionName)
         {
-            Dictionary<string, object> category = null;
-            if (!string.IsNullOrWhiteSpace(categoryName))
+            Dictionary<string, object> collection = null;
+            if (!string.IsNullOrWhiteSpace(collectionName))
             {
-                Information.TryGetValue(categoryName, out category);
+                Information.TryGetValue(collectionName, out collection);
             }
-            return category;
+            return collection;
         }
 
         // ============================================================

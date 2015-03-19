@@ -41,7 +41,7 @@ namespace CalbucciLib
         /// </summary>
         public int MaxHttpBodyLength { get; set; }
         /// <summary>
-        /// Include File Names in the CallStack category (doesn't affect Exception logging) (defaults to false)
+        /// Include File Names in the CallStack collection (doesn't affect Exception logging) (defaults to false)
         /// </summary>
         public bool IncludeFileNamesInCallStack { get; set; }
         /// <summary>
@@ -189,14 +189,14 @@ namespace CalbucciLib
             return Log(appendData, "Fatal", null, format, args);
         }
 
-        public LogEvent Exception(Exception ex, string format = null, params object[] args)
+        public LogEvent Exception(Exception ex, params object[] args)
         {
-            return Exception(null, ex, format, args);
+            return Exception(null, ex, args);
         }
 
-        public LogEvent Exception(Action<LogEvent> appendData, Exception ex, string format = null, params object[] args)
+        public LogEvent Exception(Action<LogEvent> appendData, Exception ex, params object[] args)
         {
-            return Log(appendData, "Exception", ex, format, args);
+            return Log(appendData, "Exception", ex, null, args);
         }
 
         public LogEvent PerfIssue(string format, params object[] args)
@@ -234,30 +234,40 @@ namespace CalbucciLib
                 return null;
 
             LogEvent logEvent = new LogEvent(type);
+
+	        bool saveArgs = true;
             if (format == null)
             {
-                if(ex != null)
-                    format = ex.Message;
+	            if (ex != null)
+	            {
+					logEvent.Message = ex.ToString().Replace("\r\n", "");
+	            }
+	            else if(!string.IsNullOrWhiteSpace(type))
+	            {
+					logEvent.Message = type;
+	            }
+	            else
+	            {
+					logEvent.Message = "LogEvent";
+	            }
             }
+			else if (format.IndexOf("{0") >= 0)
+			{
+				logEvent.Message = string.Format(format, args);
+				saveArgs = false;
+			}
+			else
+			{
+				logEvent.Message = format;
+			}
 
-            if (format != null)
-            {
-                if (format.IndexOf('{') >= 0)
-                {
-                    logEvent.Message = string.Format(format, args);
-                }
-                else
-                {
-                    logEvent.Message = format;
-                    if (args != null && args.Length > 0)
-                    {
-                        for (int i = 0; i < args.Length; i++)
-                        {
-                            logEvent.Add("Args", i.ToString(), args[i]);
-                        }
-                    }
-                }
-            }
+			if (saveArgs && args != null && args.Length > 0)
+			{
+				for (int i = 0; i < args.Length; i++)
+				{
+					logEvent.Add("Args", i.ToString(), args[i]);
+				}
+			}
 
             var ctx = HttpContext.Current;
             if (ctx != null)
@@ -268,7 +278,7 @@ namespace CalbucciLib
                 AddHttpSessionInfo(logEvent, ctx);
             }
 
-            logEvent.StackSignature = AppendCallStackInfo(logEvent.GetOrCreateCategory("CallStack"));
+            logEvent.StackSignature = AppendCallStackInfo(logEvent.GetOrCreateCollection("CallStack"));
             AppendThreadInfo(logEvent);
             AppendProcessInfo(logEvent);
             AppendComputerInfo(logEvent);
@@ -291,44 +301,7 @@ namespace CalbucciLib
                     return null;
             }
 
-            if (_DefaultEmailAddress != null || _FatalEmailAddress != null)
-            {
-                // Send email
-                if (SmtpClient != null)
-                {
-                    try
-                    {
-                        MailMessage mm = new MailMessage();
-                        if (_DefaultEmailAddress != null)
-                        {
-                            mm.To.Add(_DefaultEmailAddress);
-                        }
-
-                        if (type == "Fatal" && _FatalEmailAddress != null)
-                        {
-                            mm.To.Add(_FatalEmailAddress);
-                        }
-
-                        if (mm.To.Count > 0)
-                        {
-                            string messageTruncated = logEvent.Message;
-                            if (messageTruncated != null && messageTruncated.Length > 50)
-                                messageTruncated = messageTruncated.Substring(0, 50) + "...";
-                            mm.Subject = SubjectLinePrefix + type + ": " + messageTruncated + " (" + logEvent.StackSignature + ")";
-                            mm.From = EmailFrom;
-                            mm.Body = logEvent.Htmlify();
-                            mm.IsBodyHtml = true;
-
-                            SmtpClient.Send(mm);
-                        }
-                    }
-                    catch (Exception ex2)
-                    {
-                        ReportCrash(ex2);
-                    }
-
-                }
-            }
+			SendEmail(logEvent);
 
             if (LogExtensions != null)
             {
@@ -348,11 +321,53 @@ namespace CalbucciLib
             return logEvent;
         }
 
+	    private void SendEmail(LogEvent logEvent)
+	    {
+		    if (_DefaultEmailAddress == null && _FatalEmailAddress == null)
+				return;
+
+			if (SmtpClient == null)
+				return;
+
+			try
+			{
+				MailMessage mm = new MailMessage();
+				if (_DefaultEmailAddress != null)
+				{
+					mm.To.Add(_DefaultEmailAddress);
+				}
+
+				if (logEvent.Type == "Fatal" && _FatalEmailAddress != null)
+				{
+					mm.To.Add(_FatalEmailAddress);
+				}
+
+				if (mm.To.Count > 0)
+				{
+					string messageTruncated = logEvent.Message;
+					if (messageTruncated != null && messageTruncated.Length > 50)
+						messageTruncated = messageTruncated.Substring(0, 50) + "...";
+					mm.Subject = SubjectLinePrefix + logEvent.Type + ": " + messageTruncated + " (" + logEvent.StackSignature + ")";
+					mm.From = EmailFrom;
+					mm.Body = logEvent.Htmlify();
+					mm.IsBodyHtml = true;
+
+					SmtpClient.Send(mm);
+				}
+			}
+			catch (Exception ex2)
+			{
+				ReportCrash(ex2);
+			}
+
+		    
+	    }
+
         private void AppendException(LogEvent logEvent, Exception ex)
         {
             if (ex == null)
                 return;
-            AppendException(logEvent.GetOrCreateCategory("Exception"), ex);
+            AppendException(logEvent.GetOrCreateCollection("Exception"), ex);
         }
 
         private void AppendException(Dictionary<string, object> info, Exception ex)
@@ -382,7 +397,7 @@ namespace CalbucciLib
         {
             var req = ctx.Request;
 
-            var cat = logEvent.GetOrCreateCategory("HttpRequest");
+            var cat = logEvent.GetOrCreateCollection("HttpRequest");
             cat["ContentLength"] = req.ContentLength;
             cat["ContentType"] = req.ContentType;
             cat["HttpMethod"] = req.HttpMethod;
@@ -532,7 +547,7 @@ namespace CalbucciLib
         {
             HttpResponse resp = ctx.Response;
 
-            var cat = logEvent.GetOrCreateCategory("HttpResponse");
+            var cat = logEvent.GetOrCreateCollection("HttpResponse");
 
             cat["Buffer"] = resp.Buffer;
             cat["BufferOutput"] = resp.BufferOutput;
@@ -552,7 +567,7 @@ namespace CalbucciLib
 
         private void AddHttpSessionInfo(LogEvent logEvent, HttpContext ctx)
         {
-            var cat = logEvent.GetOrCreateCategory("HttpSession");
+            var cat = logEvent.GetOrCreateCollection("HttpSession");
 
             var session = ctx.Session;
 	        if (session == null)
@@ -582,7 +597,7 @@ namespace CalbucciLib
             if (user == null || !user.Identity.IsAuthenticated)
                 return;
 
-            var cat = logEvent.GetOrCreateCategory("HttpUser");
+            var cat = logEvent.GetOrCreateCollection("HttpUser");
             cat["IsAuthenticated"] = user.Identity.IsAuthenticated;
             cat["Name"] = user.Identity.Name;
             cat["AuthenticationType"] = user.Identity.AuthenticationType;
@@ -655,20 +670,26 @@ namespace CalbucciLib
         private void AppendProcessInfo(LogEvent logEvent)
         {
             System.Diagnostics.Process p = System.Diagnostics.Process.GetCurrentProcess();
-            var assembly = Assembly.GetExecutingAssembly();
 
-            logEvent.Add("Process", "AssemblyVersion", assembly.GetName().Version.ToString());
-            logEvent.Add("Process", "WorkingSet", p.WorkingSet64);
-            logEvent.Add("Process", "PeakWorkingSet64", p.PeakWorkingSet64);
-            logEvent.Add("Process", "ProcessName", p.ProcessName);
-            logEvent.Add("Process", "StartTime", p.StartTime);
-            logEvent.Add("Process", "ThreadCount", p.Threads.Count);
+			var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetCallingAssembly();
+
+	        var collection = logEvent.GetOrCreateCollection("Process");
+
+	        collection["AssemblyVersion"] = assembly.GetName().Version.ToString();
+	        collection["CurrentDirectory"] = Environment.CurrentDirectory;
+			collection["WorkingSet"] = p.WorkingSet64;
+            collection["PeakWorkingSet64"] = p.PeakWorkingSet64;
+            collection["ProcessName"] = p.ProcessName;
+            collection["StartTime"] = p.StartTime;
+            collection["ThreadCount"] = p.Threads.Count;
         }
 
         private void AppendComputerInfo(LogEvent logEvent)
         {
-            logEvent.Add("Computer", "Name", System.Environment.MachineName);
-
+			var collection = logEvent.GetOrCreateCollection("Computer");
+            collection["Name"] = System.Environment.MachineName;
+	        collection["OSVersion"] = Environment.OSVersion.ToString();
+	        collection["Version"] = Environment.Version.ToString();
         }
 
         static private bool IsSensitiveItem(string itemName)
@@ -745,14 +766,14 @@ namespace CalbucciLib
             return LogFatal(null, format, args);
         }
 
-        static public LogEvent LogException(Action<LogEvent> appendData, Exception ex, string format = null, params object[] args)
+        static public LogEvent LogException(Action<LogEvent> appendData, Exception ex, params object[] args)
         {
-            return Default.Exception(appendData, ex, format, args);
+            return Default.Exception(appendData, ex, args);
         }
 
-        static public LogEvent LogException(Exception ex, string format, params object[] args)
+        static public LogEvent LogException(Exception ex, params object[] args)
         {
-            return Default.Exception(ex, format, args);
+            return Default.Exception(ex, args);
         }
 
         static public LogEvent LogPerfIssue(Action<LogEvent> appendData, string format, params object[] args)

@@ -36,30 +36,20 @@ namespace CalbucciLib.Tests
         [TestMethod()]
         public void LogExceptionTest()
         {
-            var exception = new ArgumentNullException("The argument is null");
+            var exception = new ArgumentNullException("argument");
             bool calledAppend = false;
             var logEvent = Logger.LogException(le =>
             {
                 calledAppend = true;
-            }, exception, "This is an exception {0}", "abc");
+            }, exception, "abc");
 
             Assert.IsTrue(calledAppend, "Didn't call appendData");
             Assert.AreEqual(logEvent.Type, "Exception");
-            Assert.AreEqual(logEvent.Message, "This is an exception abc");
             Assert.IsNotNull(logEvent.StackSignature);
             Assert.AreEqual(logEvent.Get("Exception", "Type"), "System.ArgumentNullException");
             
         }
 
-        [TestMethod()]
-        public void EmailTest()
-        {
-            var customLogger = new Logger();
-            customLogger.SendToEmailAddress = "marcelo@calbucci.com";
-
-            customLogger.Error("This is an error");
-
-        }
 
 		[TestMethod()]
 		public void LogWarningTest()
@@ -80,5 +70,24 @@ namespace CalbucciLib.Tests
 
 			Assert.AreEqual(logEvent.Get("HttpUser", "Name"), userName);
 		}
+
+		[TestMethod()]
+		public void AddExtensionTest()
+		{
+			// TODO
+		}
+
+		[TestMethod()]
+	    public void ShouldLogCallbackTest()
+	    {
+		    // TODO
+	    }
+
+	    [TestMethod]
+	    public void SendEmailTest()
+	    {
+		    // TODO
+	    }
+
     }
 }
