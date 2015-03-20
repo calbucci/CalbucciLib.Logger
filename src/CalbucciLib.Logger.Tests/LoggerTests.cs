@@ -50,6 +50,19 @@ namespace CalbucciLib.Tests
             
         }
 
+        [TestMethod()]
+        public void LogExceptionTest_NoLambda()
+        {
+            var exception = new ArgumentNullException("argument");
+            //bool calledAppend = false;
+            var logEvent = Logger.LogException(exception, null);
+
+            Assert.AreEqual(logEvent.Type, "Exception");
+            Assert.IsNotNull(logEvent.StackSignature);
+            Assert.AreEqual(logEvent.Get("Exception", "Type"), "System.ArgumentNullException");
+
+        }
+
 
 		[TestMethod()]
 		public void LogWarningTest()
