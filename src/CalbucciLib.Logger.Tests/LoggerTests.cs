@@ -13,6 +13,7 @@ using System.Web.Security;
 using CalbucciLib;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System.Net.Mail;
 
 namespace CalbucciLib.Tests
 {
@@ -55,7 +56,6 @@ namespace CalbucciLib.Tests
         public void LogExceptionTest_NoLambda()
         {
             var exception = new ArgumentNullException("argument");
-            //bool calledAppend = false;
             var logEvent = Logger.LogException(exception, null);
 
             Assert.AreEqual(logEvent.Type, "Exception");
@@ -100,8 +100,22 @@ namespace CalbucciLib.Tests
 	    [TestMethod]
 	    public void SendEmailTest()
 	    {
-		    // TODO
-	    }
+            Logger.Default.SendToEmailAddressFatal = "username@gmail.com";
+            SmtpClient outlookserver = new SmtpClient("smtp.live.com")
+            {
+                UseDefaultCredentials = false,
+                Credentials = new NetworkCredential("username", "password"),
+                DeliveryMethod = SmtpDeliveryMethod.Network,
+                Port = 587,
+                EnableSsl = true,
+            };
 
+            Logger.Default.SmtpClient = outlookserver;
+            
+            var LogEvent = Logger.LogFatal("Fatal error test with email", "abc");
+
+            Assert.AreEqual(Logger.Default.ConfirmEmailSent, true);
+            
+        }
     }
 }

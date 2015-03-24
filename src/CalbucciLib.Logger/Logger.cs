@@ -70,6 +70,9 @@ namespace CalbucciLib
         /// <summary>
         /// Set an email address to all log information to
         /// </summary>
+
+        public bool ConfirmEmailSent = false;
+        
         public string SendToEmailAddress
         {
             get { return _DefaultEmailAddress != null ? _DefaultEmailAddress.Address : null; }
@@ -218,7 +221,7 @@ namespace CalbucciLib
         {
             return Log(appendData, "InvalidCodePath", null, format, args);
         }
-
+        
 
 
 
@@ -302,6 +305,8 @@ namespace CalbucciLib
             }
 
 			SendEmail(logEvent);
+
+            ConfirmEmailSent = true;
 
             if (LogExtensions != null)
             {
