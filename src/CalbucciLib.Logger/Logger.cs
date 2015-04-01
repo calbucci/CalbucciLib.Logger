@@ -241,18 +241,23 @@ namespace CalbucciLib
 	        bool saveArgs = true;
             if (format == null)
             {
-	            if (ex != null)
-	            {
-					logEvent.Message = ex.ToString().Replace("\r\n", "");
-	            }
-	            else if(!string.IsNullOrWhiteSpace(type))
-	            {
-					logEvent.Message = type;
-	            }
-	            else
-	            {
-					logEvent.Message = "LogEvent";
-	            }
+                if (ex != null)
+                {
+                    logEvent.Message = ex.ToString().Replace("\r\n", "");
+                    if (logEvent.Message.Length > 80)
+                    {
+                        logEvent.Message = logEvent.Message.Substring(0, 80) + "...";
+                    }
+
+                }
+                else if (!string.IsNullOrWhiteSpace(type))
+                {
+                    logEvent.Message = type;
+                }
+                else
+                {
+                    logEvent.Message = "LogEvent";
+                }
             }
 			else if (format.IndexOf("{0") >= 0)
 			{

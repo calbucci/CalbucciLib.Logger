@@ -157,11 +157,11 @@ namespace CalbucciLib
 				}
 				else if (de.Value is IDictionary)
 				{
+                    var dic = ((IDictionary)de.Value);
+                    if (dic.Count == 0)
+                        continue;
                     sb.Append(@"(dictionary):</div>");
 					sb.Append(@"<div style=""padding-left:2em;"">");
-					var dic = ((IDictionary) de.Value);
-				    if (dic.Count == 0)
-				        continue;
 					foreach (var k in dic.Keys)
 					{
 						var value = dic[k];
