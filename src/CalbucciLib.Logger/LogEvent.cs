@@ -185,6 +185,10 @@ namespace CalbucciLib
 							val != null ? HttpUtility.HtmlEncode(val) : "(null)");
 					}
 				}
+                else if (de.Value is Int32 || de.Value is Int64)
+                {
+                    sb.AppendFormat(": {0:N0} ({0:X})", de.Value);
+                }
 				else
 				{
 				    sb.Append(": ");

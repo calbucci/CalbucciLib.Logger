@@ -388,7 +388,7 @@ namespace CalbucciLib
             info["Message"] = ex.Message;
             if (ex.Data.Count > 0)
                 info["Data"] = ex.Data;
-            info["HResult"] = ex.HResult;
+            info["HResult"] = ex.HResult.ToString("X8");
             info["Source"] = ex.Source;
             info["StackTrace"] = ex.StackTrace;
             info["Type"] = ex.GetType().ToString();
