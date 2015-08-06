@@ -73,12 +73,12 @@ namespace CalbucciLib
 
         public bool ConfirmEmailSent = false;
         
-        public string SendToEmailAddress
+        public MailAddress SendToEmailAddress
         {
-            get { return _DefaultEmailAddress != null ? _DefaultEmailAddress.Address : null; }
+            get { return _DefaultEmailAddress; }
             set
             {
-                _DefaultEmailAddress = value == null ? null : new MailAddress(value);
+                _DefaultEmailAddress = value;
                 Debug.WriteLine("_DefaultEmailAddress = " + _DefaultEmailAddress);
                 if (_DefaultEmailAddress != null && this.SmtpClient == null)
                 {
