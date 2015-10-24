@@ -741,7 +741,7 @@ namespace CalbucciLib
             return Default.Error(appendData, format, args);
         }
 
-        static public LogEvent LogError(string format, params string[] args)
+        static public LogEvent LogError(string format, params object[] args)
         {
             return LogError(null, format, args);
         }
