@@ -420,6 +420,7 @@ namespace CalbucciLib
             cat["TotalBytes"] = req.TotalBytes;
             cat["UserHostAddress"] = req.UserHostAddress;
             cat["Url"] = req.Url;
+            cat["UserAgent"] = req.UserAgent;
 
             var cookies = new Dictionary<string, string>();
             foreach (var cookieName in req.Cookies.AllKeys)
