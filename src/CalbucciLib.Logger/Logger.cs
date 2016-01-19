@@ -5,16 +5,14 @@ using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Reflection;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Web;
 
 namespace CalbucciLib
 {
     public class Logger
     {
-        private static readonly string[] _SensitiveInfo = new[]
+        private static readonly string[] SensitiveInfo = new[]
 		{
 			"pwd",
 			"pass",
@@ -63,24 +61,23 @@ namespace CalbucciLib
         public Action<Exception> InternalCrashCallback { get; set; }
 
 
-        private MailAddress _DefaultEmailAddress { get; set; }
-        private MailAddress _FatalEmailAddress { get; set; }
+        private MailAddress DefaultEmailAddress { get; set; }
+        private MailAddress FatalEmailAddress { get; set; }
 
         public MailAddress EmailFrom { get; set; }
         /// <summary>
         /// Set an email address to all log information to
         /// </summary>
 
-        public bool ConfirmEmailSent = false;
+        public bool ConfirmEmailSent;
         
         public MailAddress SendToEmailAddress
         {
-            get { return _DefaultEmailAddress; }
+            get { return DefaultEmailAddress; }
             set
             {
-                _DefaultEmailAddress = value;
-                Debug.WriteLine("_DefaultEmailAddress = " + _DefaultEmailAddress);
-                if (_DefaultEmailAddress != null && this.SmtpClient == null)
+                DefaultEmailAddress = value;
+                if (DefaultEmailAddress != null && SmtpClient == null)
                 {
                     SmtpClient = new SmtpClient();
                 }
@@ -89,11 +86,11 @@ namespace CalbucciLib
 
         public string SendToEmailAddressFatal
         {
-            get { return _FatalEmailAddress != null ? _FatalEmailAddress.Address : null; }
+            get { return FatalEmailAddress?.Address; }
             set
             {
-                _FatalEmailAddress = value == null ? null : new MailAddress(value);
-                if (_FatalEmailAddress != null && this.SmtpClient == null)
+                FatalEmailAddress = value == null ? null : new MailAddress(value);
+                if (FatalEmailAddress != null && SmtpClient == null)
                 {
                     SmtpClient = new SmtpClient();
                 }
@@ -333,7 +330,7 @@ namespace CalbucciLib
 
 	    private void SendEmail(LogEvent logEvent)
 	    {
-		    if (_DefaultEmailAddress == null && _FatalEmailAddress == null)
+		    if (DefaultEmailAddress == null && FatalEmailAddress == null)
 				return;
 
 			if (SmtpClient == null)
@@ -342,14 +339,14 @@ namespace CalbucciLib
 			try
 			{
 				MailMessage mm = new MailMessage();
-				if (_DefaultEmailAddress != null)
+				if (DefaultEmailAddress != null)
 				{
-					mm.To.Add(_DefaultEmailAddress);
+					mm.To.Add(DefaultEmailAddress);
 				}
 
-				if (logEvent.Type == "Fatal" && _FatalEmailAddress != null)
+				if (logEvent.Type == "Fatal" && FatalEmailAddress != null)
 				{
-					mm.To.Add(_FatalEmailAddress);
+					mm.To.Add(FatalEmailAddress);
 				}
 
 				if (mm.To.Count > 0)
@@ -423,7 +420,7 @@ namespace CalbucciLib
             cat["UserAgent"] = req.UserAgent;
 
             var cookies = new Dictionary<string, string>();
-            foreach (var cookieName in req.Cookies.AllKeys)
+            foreach (var cookieName in req.Unvalidated.Cookies.AllKeys)
             {
                 var cookie = req.Cookies[cookieName];
                 if (cookie == null)
@@ -432,32 +429,31 @@ namespace CalbucciLib
             }
             cat["Cookies"] = cookies;
 
-            var headers = new Dictionary<string, string>();
-            for (int i = 0; i < req.Headers.Keys.Count; i++)
+            for (int i = 0; i < req.Unvalidated.Headers.Keys.Count; i++)
             {
                 string key = req.Headers.GetKey(i);
                 string[] vals = req.Headers.GetValues(i);
                 if (vals == null || vals.Length == 0)
                 {
-                    headers[key] = "";
+                    cat["Header:" + key] = "";
                 }
                 else if (vals.Length == 1)
                 {
-                    headers[key] = vals[0];
+                    cat["Header:" + key] = vals[0];
                 }
                 else
                 {
 
                     for (int t = 0; t < vals.Length; t++)
                     {
-                        headers[key + "(" + t + ")"] = vals[t];
+                        cat["Header(" + t + "):" + key] = vals[t];
                     }
                 }
             }
 
 	        if (MaxHttpFormValueLength > 0)
 	        {
-		        var form = req.Form;
+		        var form = req.Unvalidated.Form;
 		        if (form.Keys.Count > 0)
 		        {
 			        var formInfo = new Dictionary<string, string>(form.Keys.Count);
@@ -467,6 +463,7 @@ namespace CalbucciLib
 			        {
 				        string key = form.GetKey(i);
 				        string keyName = "Form:" + key;
+                        
 				        string[] vals = form.GetValues(i);
 				        if (vals != null && vals.Length != 0 && !string.IsNullOrWhiteSpace(vals[0]) && IsSensitiveItem(key))
 				        {
@@ -508,7 +505,7 @@ namespace CalbucciLib
 		        }
 	        }
 
-	        var files = req.Files;
+	        var files = req.Unvalidated.Files;
             if (files.Count > 0)
             {
                 var fileInfo = new Dictionary<string, object>(files.Count);
@@ -638,7 +635,7 @@ namespace CalbucciLib
                 var methodType = method.DeclaringType ?? method.ReflectedType;
                 if (skipLoggerClass)
                 {
-                    if (methodType == typeof(CalbucciLib.Logger) || methodType == typeof(CalbucciLib.PerfLogger))
+                    if (methodType == typeof(Logger) || methodType == typeof(PerfLogger))
                     {
                         continue;
                     }
@@ -680,7 +677,7 @@ namespace CalbucciLib
 
         private void AppendProcessInfo(LogEvent logEvent)
         {
-            System.Diagnostics.Process p = System.Diagnostics.Process.GetCurrentProcess();
+            var p = Process.GetCurrentProcess();
 
 			var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetCallingAssembly();
 
@@ -698,7 +695,7 @@ namespace CalbucciLib
         private void AppendComputerInfo(LogEvent logEvent)
         {
 			var collection = logEvent.GetOrCreateCollection("Computer");
-            collection["Name"] = System.Environment.MachineName;
+            collection["Name"] = Environment.MachineName;
 	        collection["OSVersion"] = Environment.OSVersion.ToString();
 	        collection["Version"] = Environment.Version.ToString();
         }
@@ -708,7 +705,7 @@ namespace CalbucciLib
             if (string.IsNullOrWhiteSpace(itemName))
                 return false;
 
-            return _SensitiveInfo.Any(si => itemName.IndexOf(si, StringComparison.CurrentCultureIgnoreCase) >= 0);
+            return SensitiveInfo.Any(si => itemName.IndexOf(si, StringComparison.CurrentCultureIgnoreCase) >= 0);
         }
 
         private void ReportCrash(Exception ex)
