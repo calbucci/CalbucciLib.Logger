@@ -13,20 +13,20 @@ namespace CalbucciLib
     public class Logger
     {
         private static readonly string[] SensitiveInfo = new[]
-		{
-			"pwd",
-			"pass",
-			"auth",
-			"ccnum",
-			"ccno",
-			"credit",
-			"token",
-			"card",
-			"ssn",
-			"socialsec",
-			"ssnum",
-			"secnumber"
-		};
+        {
+            "pwd",
+            "pass",
+            "auth",
+            "ccnum",
+            "ccno",
+            "credit",
+            "token",
+            "card",
+            "ssn",
+            "socialsec",
+            "ssnum",
+            "secnumber"
+        };
 
         public static Logger Default { get; set; }
 
@@ -70,7 +70,7 @@ namespace CalbucciLib
         /// </summary>
 
         public bool ConfirmEmailSent;
-        
+
         public MailAddress SendToEmailAddress
         {
             get { return DefaultEmailAddress; }
@@ -218,7 +218,7 @@ namespace CalbucciLib
         {
             return Log(appendData, "InvalidCodePath", null, format, args);
         }
-        
+
 
 
 
@@ -235,7 +235,7 @@ namespace CalbucciLib
 
             LogEvent logEvent = new LogEvent(type);
 
-	        bool saveArgs = true;
+            bool saveArgs = true;
             if (format == null)
             {
                 if (ex != null)
@@ -256,23 +256,23 @@ namespace CalbucciLib
                     logEvent.Message = "LogEvent";
                 }
             }
-			else if (format.IndexOf("{0") >= 0)
-			{
-				logEvent.Message = string.Format(format, args);
-				saveArgs = false;
-			}
-			else
-			{
-				logEvent.Message = format;
-			}
+            else if (format.IndexOf("{0") >= 0)
+            {
+                logEvent.Message = string.Format(format, args);
+                saveArgs = false;
+            }
+            else
+            {
+                logEvent.Message = format;
+            }
 
-			if (saveArgs && args != null && args.Length > 0)
-			{
-				for (int i = 0; i < args.Length; i++)
-				{
-					logEvent.Add("Args", i.ToString(), args[i]);
-				}
-			}
+            if (saveArgs && args != null && args.Length > 0)
+            {
+                for (int i = 0; i < args.Length; i++)
+                {
+                    logEvent.Add("Args", i.ToString(), args[i]);
+                }
+            }
 
             var ctx = HttpContext.Current;
             if (ctx != null)
@@ -306,7 +306,7 @@ namespace CalbucciLib
                     return null;
             }
 
-			SendEmail(logEvent);
+            SendEmail(logEvent);
 
             ConfirmEmailSent = true;
 
@@ -328,47 +328,47 @@ namespace CalbucciLib
             return logEvent;
         }
 
-	    private void SendEmail(LogEvent logEvent)
-	    {
-		    if (DefaultEmailAddress == null && FatalEmailAddress == null)
-				return;
+        private void SendEmail(LogEvent logEvent)
+        {
+            if (DefaultEmailAddress == null && FatalEmailAddress == null)
+                return;
 
-			if (SmtpClient == null)
-				return;
+            if (SmtpClient == null)
+                return;
 
-			try
-			{
-				MailMessage mm = new MailMessage();
-				if (DefaultEmailAddress != null)
-				{
-					mm.To.Add(DefaultEmailAddress);
-				}
+            try
+            {
+                MailMessage mm = new MailMessage();
+                if (DefaultEmailAddress != null)
+                {
+                    mm.To.Add(DefaultEmailAddress);
+                }
 
-				if (logEvent.Type == "Fatal" && FatalEmailAddress != null)
-				{
-					mm.To.Add(FatalEmailAddress);
-				}
+                if (logEvent.Type == "Fatal" && FatalEmailAddress != null)
+                {
+                    mm.To.Add(FatalEmailAddress);
+                }
 
-				if (mm.To.Count > 0)
-				{
-					string messageTruncated = logEvent.Message;
-					if (messageTruncated != null && messageTruncated.Length > 50)
-						messageTruncated = messageTruncated.Substring(0, 50) + "...";
-					mm.Subject = SubjectLinePrefix + logEvent.Type + ": " + messageTruncated + " (" + logEvent.StackSignature + ")";
-					mm.From = EmailFrom;
-					mm.Body = logEvent.Htmlify();
-					mm.IsBodyHtml = true;
+                if (mm.To.Count > 0)
+                {
+                    string messageTruncated = logEvent.Message;
+                    if (messageTruncated != null && messageTruncated.Length > 50)
+                        messageTruncated = messageTruncated.Substring(0, 50) + "...";
+                    mm.Subject = SubjectLinePrefix + logEvent.Type + ": " + messageTruncated + " (" + logEvent.StackSignature + ")";
+                    mm.From = EmailFrom;
+                    mm.Body = logEvent.Htmlify();
+                    mm.IsBodyHtml = true;
 
-					SmtpClient.Send(mm);
-				}
-			}
-			catch (Exception ex2)
-			{
-				ReportCrash(ex2);
-			}
+                    SmtpClient.Send(mm);
+                }
+            }
+            catch (Exception ex2)
+            {
+                ReportCrash(ex2);
+            }
 
-		    
-	    }
+
+        }
 
         private void AppendException(LogEvent logEvent, Exception ex)
         {
@@ -402,213 +402,246 @@ namespace CalbucciLib
 
         private void AppendHttpRequestInfo(LogEvent logEvent, HttpContext ctx)
         {
-            var req = ctx.Request;
 
-            var cat = logEvent.GetOrCreateCollection("HttpRequest");
-            cat["ContentLength"] = req.ContentLength;
-            cat["ContentType"] = req.ContentType;
-            cat["HttpMethod"] = req.HttpMethod;
-            cat["IsAuthenticated"] = req.IsAuthenticated;
-            cat["Path"] = req.Path;
-            cat["PathInfo"] = req.PathInfo;
-            cat["Referrer"] = req.UrlReferrer;
-            cat["RequestType"] = req.RequestType;
-            cat["RawUrl"] = req.RawUrl;
-            cat["TotalBytes"] = req.TotalBytes;
-            cat["UserHostAddress"] = req.UserHostAddress;
-            cat["Url"] = req.Url;
-            cat["UserAgent"] = req.UserAgent;
-
-            var cookies = new Dictionary<string, string>();
-            foreach (var cookieName in req.Unvalidated.Cookies.AllKeys)
+            try
             {
-                var cookie = req.Cookies[cookieName];
-                if (cookie == null)
-                    continue;
-                cookies[cookieName] = cookie.Value;
-            }
-            cat["Cookies"] = cookies;
 
-            for (int i = 0; i < req.Unvalidated.Headers.Keys.Count; i++)
-            {
-                string key = req.Headers.GetKey(i);
-                string[] vals = req.Headers.GetValues(i);
-                if (vals == null || vals.Length == 0)
-                {
-                    cat["Header:" + key] = "";
-                }
-                else if (vals.Length == 1)
-                {
-                    cat["Header:" + key] = vals[0];
-                }
-                else
-                {
+                var req = ctx.Request;
 
-                    for (int t = 0; t < vals.Length; t++)
+                var cat = logEvent.GetOrCreateCollection("HttpRequest");
+                cat["ContentLength"] = req.ContentLength;
+                cat["ContentType"] = req.ContentType;
+                cat["HttpMethod"] = req.HttpMethod;
+                cat["IsAuthenticated"] = req.IsAuthenticated;
+                cat["Path"] = req.Path;
+                cat["PathInfo"] = req.PathInfo;
+                cat["Referrer"] = req.UrlReferrer;
+                cat["RequestType"] = req.RequestType;
+                cat["RawUrl"] = req.RawUrl;
+                cat["TotalBytes"] = req.TotalBytes;
+                cat["UserHostAddress"] = req.UserHostAddress;
+                cat["Url"] = req.Url;
+                cat["UserAgent"] = req.UserAgent;
+
+                var cookies = new Dictionary<string, string>();
+                foreach (var cookieName in req.Unvalidated.Cookies.AllKeys)
+                {
+                    var cookie = req.Cookies[cookieName];
+                    if (cookie == null)
+                        continue;
+                    cookies[cookieName] = cookie.Value;
+                }
+                cat["Cookies"] = cookies;
+
+                for (int i = 0; i < req.Unvalidated.Headers.Keys.Count; i++)
+                {
+                    string key = req.Headers.GetKey(i);
+                    string[] vals = req.Headers.GetValues(i);
+                    if (vals == null || vals.Length == 0)
                     {
-                        cat["Header(" + t + "):" + key] = vals[t];
+                        cat["Header:" + key] = "";
+                    }
+                    else if (vals.Length == 1)
+                    {
+                        cat["Header:" + key] = vals[0];
+                    }
+                    else
+                    {
+
+                        for (int t = 0; t < vals.Length; t++)
+                        {
+                            cat["Header(" + t + "):" + key] = vals[t];
+                        }
+                    }
+                }
+
+                if (MaxHttpFormValueLength > 0)
+                {
+                    var form = req.Unvalidated.Form;
+                    if (form.Keys.Count > 0)
+                    {
+                        var formInfo = new Dictionary<string, string>(form.Keys.Count);
+                        cat["Form"] = formInfo;
+
+                        for (int i = 0; i < form.Keys.Count; i++)
+                        {
+                            string key = form.GetKey(i);
+                            string keyName = "Form:" + key;
+
+                            string[] vals = form.GetValues(i);
+                            if (vals != null && vals.Length != 0 && !string.IsNullOrWhiteSpace(vals[0]) && IsSensitiveItem(key))
+                            {
+                                if (vals.Length == 1)
+                                {
+                                    formInfo[keyName] = string.Format("[removed for security] Length: {0}", vals[0].Length);
+                                }
+                                else
+                                {
+                                    for (int j = 0; j < vals.Length; j++)
+                                    {
+                                        formInfo[keyName + ":" + j] = string.Format("[removed for security] Length: {0}",
+                                            vals[j] != null ? vals[j].Length : 0);
+                                    }
+                                }
+                                continue;
+                            }
+                            if (vals == null || vals.Length == 0)
+                            {
+                                formInfo[keyName] = "";
+                            }
+                            else if (vals.Length == 1)
+                            {
+                                formInfo[keyName] = vals[0] != null
+                                    ? (vals[0].Length > MaxHttpFormValueLength ? vals[0].Substring(0, Int32.MaxValue) + "..." : vals[0])
+                                    : "";
+
+                            }
+                            else
+                            {
+                                for (int t = 0; t < vals.Length; t++)
+                                {
+                                    formInfo[keyName + ":" + t] = vals[t] != null
+                                        ? (vals[t].Length > MaxHttpFormValueLength ? vals[t].Substring(0, Int32.MaxValue) + "..." : vals[t])
+                                        : "";
+                                }
+                            }
+                        }
+                    }
+                }
+
+                var files = req.Unvalidated.Files;
+                if (files.Count > 0)
+                {
+                    var fileInfo = new Dictionary<string, object>(files.Count);
+                    cat["Files"] = fileInfo;
+                    for (int i = 0; i < files.Count; i++)
+                    {
+                        var pf = req.Files[i];
+                        fileInfo["File:" + i + ":FileName"] = pf.FileName;
+                        fileInfo["File:" + i + ":ContentType"] = pf.ContentType;
+                        fileInfo["File:" + i + ":ContentLength"] = pf.ContentLength;
+                    }
+                }
+
+                string contentType = req.ContentType.ToLower();
+
+                if (MaxHttpBodyLength > 0)
+                {
+                    if (contentType.Contains("application/json")
+                        || contentType.Contains("text/")
+                        || contentType.Contains("html/")
+                        || contentType.Contains("application/xml")
+                        || contentType.Contains("+xml"))
+                    {
+                        try
+                        {
+                            using (var sr = new StreamReader(req.InputStream))
+                            {
+                                if (req.InputStream.CanSeek)
+                                    req.InputStream.Position = 0;
+
+                                string bodyContent = sr.ReadToEnd();
+                                if (bodyContent.Length > MaxHttpBodyLength)
+                                    bodyContent = bodyContent.Substring(0, MaxHttpBodyLength) + "...";
+
+                                cat["Body"] = bodyContent;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            ReportCrash(ex);
+                        }
                     }
                 }
             }
-
-	        if (MaxHttpFormValueLength > 0)
-	        {
-		        var form = req.Unvalidated.Form;
-		        if (form.Keys.Count > 0)
-		        {
-			        var formInfo = new Dictionary<string, string>(form.Keys.Count);
-			        cat["Form"] = formInfo;
-
-			        for (int i = 0; i < form.Keys.Count; i++)
-			        {
-				        string key = form.GetKey(i);
-				        string keyName = "Form:" + key;
-                        
-				        string[] vals = form.GetValues(i);
-				        if (vals != null && vals.Length != 0 && !string.IsNullOrWhiteSpace(vals[0]) && IsSensitiveItem(key))
-				        {
-					        if (vals.Length == 1)
-					        {
-						        formInfo[keyName] = string.Format("[removed for security] Length: {0}", vals[0].Length);
-					        }
-					        else
-					        {
-						        for (int j = 0; j < vals.Length; j++)
-						        {
-							        formInfo[keyName + ":" + j] = string.Format("[removed for security] Length: {0}",
-								        vals[j] != null ? vals[j].Length : 0);
-						        }
-					        }
-					        continue;
-				        }
-				        if (vals == null || vals.Length == 0)
-				        {
-					        formInfo[keyName] = "";
-				        }
-				        else if (vals.Length == 1)
-				        {
-					        formInfo[keyName] = vals[0] != null
-						        ? (vals[0].Length > MaxHttpFormValueLength ? vals[0].Substring(0, Int32.MaxValue) + "..." : vals[0])
-						        : "";
-
-				        }
-				        else
-				        {
-					        for (int t = 0; t < vals.Length; t++)
-					        {
-						        formInfo[keyName + ":" + t] = vals[t] != null
-							        ? (vals[t].Length > MaxHttpFormValueLength ? vals[t].Substring(0, Int32.MaxValue) + "..." : vals[t])
-							        : "";
-					        }
-				        }
-			        }
-		        }
-	        }
-
-	        var files = req.Unvalidated.Files;
-            if (files.Count > 0)
+            catch (Exception ex)
             {
-                var fileInfo = new Dictionary<string, object>(files.Count);
-                cat["Files"] = fileInfo;
-                for (int i = 0; i < files.Count; i++)
-                {
-                    var pf = req.Files[i];
-                    fileInfo["File:" + i + ":FileName"] = pf.FileName;
-                    fileInfo["File:" + i + ":ContentType"] = pf.ContentType;
-                    fileInfo["File:" + i + ":ContentLength"] = pf.ContentLength;
-                }
+                ReportCrash(ex);
             }
 
-            string contentType = req.ContentType.ToLower();
-
-	        if (MaxHttpBodyLength > 0)
-	        {
-		        if (contentType.Contains("application/json")
-		            || contentType.Contains("text/")
-		            || contentType.Contains("html/")
-		            || contentType.Contains("application/xml")
-		            || contentType.Contains("+xml"))
-		        {
-			        try
-			        {
-				        using (var sr = new StreamReader(req.InputStream))
-				        {
-					        if (req.InputStream.CanSeek)
-						        req.InputStream.Position = 0;
-
-					        string bodyContent = sr.ReadToEnd();
-					        if (bodyContent.Length > MaxHttpBodyLength)
-						        bodyContent = bodyContent.Substring(0, MaxHttpBodyLength) + "...";
-
-					        cat["Body"] = bodyContent;
-				        }
-			        }
-			        catch (Exception ex)
-			        {
-				        ReportCrash(ex);
-			        }
-		        }
-	        }
         }
 
         private void AppendHttpResponseInfo(LogEvent logEvent, HttpContext ctx)
         {
-            HttpResponse resp = ctx.Response;
+            try
+            {
+                HttpResponse resp = ctx.Response;
 
-            var cat = logEvent.GetOrCreateCollection("HttpResponse");
+                var cat = logEvent.GetOrCreateCollection("HttpResponse");
 
-            cat["Buffer"] = resp.Buffer;
-            cat["BufferOutput"] = resp.BufferOutput;
-            cat["CacheControl"] = resp.CacheControl;
-            cat["Charset"] = resp.Charset;
-            cat["ContentEncoding"] = resp.ContentEncoding.EncodingName;
-            cat["ContentType"] = resp.ContentType;
-            cat["Expires"] = resp.Expires;
-            cat["ExpiresAbsolute"] = resp.ExpiresAbsolute;
-            cat["IsClientConnected"] = resp.IsClientConnected;
-            cat["RedirectLocation"] = resp.RedirectLocation;
-            cat["Status"] = resp.Status;
-            cat["StatusCode"] = resp.StatusCode;
-            cat["StatusDescription"] = resp.StatusDescription;
-            cat["SupressContent"] = resp.SuppressContent;
+                cat["Buffer"] = resp.Buffer;
+                cat["BufferOutput"] = resp.BufferOutput;
+                cat["CacheControl"] = resp.CacheControl;
+                cat["Charset"] = resp.Charset;
+                cat["ContentEncoding"] = resp.ContentEncoding.EncodingName;
+                cat["ContentType"] = resp.ContentType;
+                cat["Expires"] = resp.Expires;
+                cat["ExpiresAbsolute"] = resp.ExpiresAbsolute;
+                cat["IsClientConnected"] = resp.IsClientConnected;
+                cat["RedirectLocation"] = resp.RedirectLocation;
+                cat["Status"] = resp.Status;
+                cat["StatusCode"] = resp.StatusCode;
+                cat["StatusDescription"] = resp.StatusDescription;
+                cat["SupressContent"] = resp.SuppressContent;
+            }
+            catch (Exception ex)
+            {
+                ReportCrash(ex);
+            }
         }
 
         private void AddHttpSessionInfo(LogEvent logEvent, HttpContext ctx)
         {
             var cat = logEvent.GetOrCreateCollection("HttpSession");
 
-            var session = ctx.Session;
-	        if (session == null)
-		        return;
 
-            cat["SessionID"] = session.SessionID;
-            cat["IsNewSession"] = session.IsNewSession;
-
-            if (IncludeSessionObjects)
+            try
             {
-                for (int i = 0; i < session.Count; i++)
-                {
-                    string key = session.Keys[i];
-                    object value = session[key];
 
-                    if (IsSensitiveItem(key))
-                        value = "[removed for security] Length: " + (value != null ? (value.ToString().Length) : 0);
-                    cat[key] = value;
+                var session = ctx.Session;
+                if (session == null)
+                    return;
+
+                cat["SessionID"] = session.SessionID;
+                cat["IsNewSession"] = session.IsNewSession;
+
+                if (IncludeSessionObjects)
+                {
+                    for (int i = 0; i < session.Count; i++)
+                    {
+                        string key = session.Keys[i];
+                        object value = session[key];
+
+                        if (IsSensitiveItem(key))
+                            value = "[removed for security] Length: " + (value != null ? (value.ToString().Length) : 0);
+                        cat[key] = value;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                ReportCrash(ex);
             }
         }
 
         private void AppendHttpContextUserInfo(LogEvent logEvent, HttpContext ctx)
         {
-            var user = ctx.User;
+            try
+            {
+                var user = ctx.User;
 
-            if (user == null || !user.Identity.IsAuthenticated)
-                return;
+                if (user == null || !user.Identity.IsAuthenticated)
+                    return;
 
-            var cat = logEvent.GetOrCreateCollection("HttpUser");
-            cat["IsAuthenticated"] = user.Identity.IsAuthenticated;
-            cat["Name"] = user.Identity.Name;
-            cat["AuthenticationType"] = user.Identity.AuthenticationType;
+                var cat = logEvent.GetOrCreateCollection("HttpUser");
+                cat["IsAuthenticated"] = user.Identity.IsAuthenticated;
+                cat["Name"] = user.Identity.Name;
+                cat["AuthenticationType"] = user.Identity.AuthenticationType;
+            }
+            catch (Exception ex)
+            {
+                ReportCrash(ex);
+            }
         }
 
 
@@ -679,13 +712,13 @@ namespace CalbucciLib
         {
             var p = Process.GetCurrentProcess();
 
-			var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetCallingAssembly();
+            var assembly = Assembly.GetEntryAssembly() ?? Assembly.GetCallingAssembly();
 
-	        var collection = logEvent.GetOrCreateCollection("Process");
+            var collection = logEvent.GetOrCreateCollection("Process");
 
-	        collection["AssemblyVersion"] = assembly.GetName().Version.ToString();
-	        collection["CurrentDirectory"] = Environment.CurrentDirectory;
-			collection["WorkingSet"] = p.WorkingSet64;
+            collection["AssemblyVersion"] = assembly.GetName().Version.ToString();
+            collection["CurrentDirectory"] = Environment.CurrentDirectory;
+            collection["WorkingSet"] = p.WorkingSet64;
             collection["PeakWorkingSet64"] = p.PeakWorkingSet64;
             collection["ProcessName"] = p.ProcessName;
             collection["StartTime"] = p.StartTime;
@@ -694,10 +727,10 @@ namespace CalbucciLib
 
         private void AppendComputerInfo(LogEvent logEvent)
         {
-			var collection = logEvent.GetOrCreateCollection("Computer");
+            var collection = logEvent.GetOrCreateCollection("Computer");
             collection["Name"] = Environment.MachineName;
-	        collection["OSVersion"] = Environment.OSVersion.ToString();
-	        collection["Version"] = Environment.Version.ToString();
+            collection["OSVersion"] = Environment.OSVersion.ToString();
+            collection["Version"] = Environment.Version.ToString();
         }
 
         static private bool IsSensitiveItem(string itemName)

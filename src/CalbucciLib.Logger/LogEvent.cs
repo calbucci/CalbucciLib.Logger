@@ -187,7 +187,7 @@ namespace CalbucciLib
 				}
                 else if (de.Value is Int32 || de.Value is Int64)
                 {
-                    sb.AppendFormat(": {0:N0} ({0:X})", de.Value);
+                    sb.AppendFormat(": {0:N0} (0x{0:X})", de.Value);
                 }
 				else
 				{
