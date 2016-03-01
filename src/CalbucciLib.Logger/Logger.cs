@@ -733,7 +733,7 @@ namespace CalbucciLib
             collection["Version"] = Environment.Version.ToString();
         }
 
-        static private bool IsSensitiveItem(string itemName)
+        private static bool IsSensitiveItem(string itemName)
         {
             if (string.IsNullOrWhiteSpace(itemName))
                 return false;
@@ -767,72 +767,72 @@ namespace CalbucciLib
         //
         // ============================================================
 
-        static public LogEvent LogError(Action<LogEvent> appendData, string format, params object[] args)
+        public static LogEvent LogError(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Default.Error(appendData, format, args);
         }
 
-        static public LogEvent LogError(string format, params object[] args)
+        public static LogEvent LogError(string format, params object[] args)
         {
             return LogError(null, format, args);
         }
 
-        static public LogEvent LogWarning(Action<LogEvent> appendData, string format, params object[] args)
+        public static LogEvent LogWarning(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Default.Warning(appendData, format, args);
         }
 
-        static public LogEvent LogWarning(string format, params object[] args)
+        public static LogEvent LogWarning(string format, params object[] args)
         {
             return LogWarning(null, format, args);
         }
 
-        static public LogEvent LogInfo(Action<LogEvent> appendData, string format, params object[] args)
+        public static LogEvent LogInfo(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Default.Info(appendData, format, args);
         }
 
-        static public LogEvent LogInfo(string format, params object[] args)
+        public static LogEvent LogInfo(string format, params object[] args)
         {
             return LogInfo(null, format, args);
         }
 
-        static public LogEvent LogFatal(Action<LogEvent> appendData, string format, params object[] args)
+        public static LogEvent LogFatal(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Default.Fatal(appendData, format, args);
         }
 
-        static public LogEvent LogFatal(string format, params object[] args)
+        public static LogEvent LogFatal(string format, params object[] args)
         {
             return LogFatal(null, format, args);
         }
 
-        static public LogEvent LogException(Action<LogEvent> appendData, Exception ex, params object[] args)
+        public static LogEvent LogException(Action<LogEvent> appendData, Exception ex, params object[] args)
         {
             return Default.Exception(appendData, ex, args);
         }
 
-        static public LogEvent LogException(Exception ex, params object[] args)
+        public static LogEvent LogException(Exception ex, params object[] args)
         {
             return Default.Exception(ex, args);
         }
 
-        static public LogEvent LogPerfIssue(Action<LogEvent> appendData, string format, params object[] args)
+        public static LogEvent LogPerfIssue(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Default.PerfIssue(appendData, format, args);
         }
 
-        static public LogEvent LogPerfIssue(string format, params object[] args)
+        public static LogEvent LogPerfIssue(string format, params object[] args)
         {
             return Default.PerfIssue(format, args);
         }
 
-        static public LogEvent LogInvalidCodePath(Action<LogEvent> appendData, string format, params object[] args)
+        public static LogEvent LogInvalidCodePath(Action<LogEvent> appendData, string format, params object[] args)
         {
             return Default.InvalidCodePath(appendData, format, args);
         }
 
-        static public LogEvent LogInvalidCodePath(string format, params object[] args)
+        public static LogEvent LogInvalidCodePath(string format, params object[] args)
         {
             return Default.InvalidCodePath(format, args);
         }

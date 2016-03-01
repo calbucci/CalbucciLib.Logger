@@ -198,7 +198,7 @@ namespace CalbucciLib
 			}
 		}
 
-		static public LogEvent FromJson(string json)
+		public static LogEvent FromJson(string json)
 		{
 			if (string.IsNullOrWhiteSpace(json))
 				return null;
