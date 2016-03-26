@@ -395,6 +395,13 @@ namespace CalbucciLib
                 var innerInfo = new Dictionary<string, object>();
                 info["InnerException"] = innerInfo;
                 AppendException(innerInfo, ex.InnerException);
+
+                if(ex.InnerException.InnerException != null)
+                {
+                    var innerInnerInfo = new Dictionary<string, object>();
+                    info["Inner.InnerException"] = innerInnerInfo;
+                    AppendException(innerInnerInfo, ex.InnerException.InnerException);
+                }
             }
         }
 
