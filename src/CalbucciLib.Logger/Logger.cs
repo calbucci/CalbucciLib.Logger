@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Mail;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Web;
 
@@ -354,12 +355,33 @@ namespace CalbucciLib
                     string messageTruncated = logEvent.Message;
                     if (messageTruncated != null && messageTruncated.Length > 50)
                         messageTruncated = messageTruncated.Substring(0, 50) + "...";
+
+                    // remove any control character  and convert all whistespaces to a space
+                    if (messageTruncated != null)
+                    {
+                        StringBuilder sb = new StringBuilder(messageTruncated.Length);
+                        foreach (char c in messageTruncated)
+                        {
+                            if (char.IsControl(c) || char.IsWhiteSpace(c))
+                                sb.Append(' ');
+                            else
+                                sb.Append(c);
+                        }
+                        messageTruncated = sb.ToString();
+                    }
+
                     mm.Subject = SubjectLinePrefix + logEvent.Type + ": " + messageTruncated + " (" + logEvent.StackSignature + ")";
+
+
+
                     mm.From = EmailFrom;
                     mm.Body = logEvent.Htmlify();
                     mm.IsBodyHtml = true;
 
-                    SmtpClient.Send(mm);
+                    lock (SmtpClient)
+                    {
+                        SmtpClient.Send(mm);
+                    }
                 }
             }
             catch (Exception ex2)
