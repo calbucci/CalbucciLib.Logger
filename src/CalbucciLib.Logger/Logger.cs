@@ -30,6 +30,8 @@ namespace CalbucciLib
         };
 
         public static Logger Default { get; set; }
+        private static Dictionary<string, int> EmailSignatureCounter { get; set; }
+        private static DateTime NextSignatureFlush { get; set; }
 
         /// <summary>
         /// Truncate threshold for FORMs values (default 8K)
@@ -60,6 +62,11 @@ namespace CalbucciLib
         /// If the logging system itself throws an exception, it calls this function
         /// </summary>
         public Action<Exception> InternalCrashCallback { get; set; }
+
+        /// <summary>
+        /// Maximum number of emails with the same callstack per hour (default 50)
+        /// </summary>
+        public static int MaxEmailPerHour { get; set; }
 
 
         private MailAddress DefaultEmailAddress { get; set; }
@@ -114,6 +121,10 @@ namespace CalbucciLib
         static Logger()
         {
             Default = new Logger();
+
+            EmailSignatureCounter = new Dictionary<string, int>();
+            NextSignatureFlush = DateTime.UtcNow.AddHours(1);
+            MaxEmailPerHour = 50;
         }
 
         public Logger()
@@ -336,6 +347,25 @@ namespace CalbucciLib
 
             if (SmtpClient == null)
                 return;
+
+            lock (typeof (Logger))
+            {
+                int emailCount = 0;
+                if (NextSignatureFlush >= logEvent.EventDateUtc)
+                {
+                    if (EmailSignatureCounter.TryGetValue(logEvent.StackSignature, out emailCount))
+                    {
+                        if (emailCount >= MaxEmailPerHour)
+                            return;
+                    }
+                }
+                else
+                {
+                    EmailSignatureCounter = new Dictionary<string, int>();
+                    NextSignatureFlush = DateTime.UtcNow.AddHours(1);
+                }
+                EmailSignatureCounter[logEvent.StackSignature] = emailCount + 1;
+            }
 
             try
             {
