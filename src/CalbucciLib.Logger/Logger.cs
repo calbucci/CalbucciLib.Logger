@@ -464,7 +464,7 @@ namespace CalbucciLib
 
             try
             {
-                if (ctx.IsWebSocketRequest)
+                if (ctx.WebSocketNegotiatedProtocol != null)
                     return;
 
                 var req = ctx.Request;
@@ -626,7 +626,7 @@ namespace CalbucciLib
         {
             try
             {
-                if (ctx.IsWebSocketRequest)
+                if (ctx.WebSocketNegotiatedProtocol != null)
                     return;
 
                 HttpResponse resp = ctx.Response;
@@ -656,14 +656,13 @@ namespace CalbucciLib
 
         private void AddHttpSessionInfo(LogEvent logEvent, HttpContext ctx)
         {
-            if (ctx.IsWebSocketRequest)
-                return;
-
             var cat = logEvent.GetOrCreateCollection("HttpSession");
 
 
             try
             {
+                if (ctx.WebSocketNegotiatedProtocol != null)
+                    return;
 
                 var session = ctx.Session;
                 if (session == null)
