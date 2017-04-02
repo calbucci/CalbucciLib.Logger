@@ -464,6 +464,8 @@ namespace CalbucciLib
 
             try
             {
+                if (ctx.IsWebSocketRequest)
+                    return;
 
                 var req = ctx.Request;
 
@@ -624,6 +626,9 @@ namespace CalbucciLib
         {
             try
             {
+                if (ctx.IsWebSocketRequest)
+                    return;
+
                 HttpResponse resp = ctx.Response;
 
                 var cat = logEvent.GetOrCreateCollection("HttpResponse");
@@ -651,6 +656,9 @@ namespace CalbucciLib
 
         private void AddHttpSessionInfo(LogEvent logEvent, HttpContext ctx)
         {
+            if (ctx.IsWebSocketRequest)
+                return;
+
             var cat = logEvent.GetOrCreateCollection("HttpSession");
 
 
